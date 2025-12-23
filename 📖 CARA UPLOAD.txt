@@ -1,0 +1,194 @@
+╔══════════════════════════════════════════════════════════╗
+║     GEMBOK - Production Upload Instructions             ║
+║     Siap Upload ke: gembok.alijaya.net                   ║
+╚══════════════════════════════════════════════════════════╝
+
+📦 STRUKTUR FILES YANG SUDAH SIAP:
+====================================
+
+✅ Folder "gembok"       → Upload ke: /home/alijayan/gembok.alijaya.net/
+
+
+
+📋 CEK SEBELUM UPLOAD:
+======================
+
+Di folder "gembok":
+-----------------
+✅ app/               (95 files)
+✅ vendor/            (1108 files) 
+✅ writable/          (83 files)
+✅ .env               ⚠️  EDIT DATABASE PASSWORD!
+✅ install.php
+
+Di folder "public_html":
+-----------------------
+✅ index.php          (SUDAH dikonfigurasi untuk production)
+✅ .htaccess          (SUDAH dikonfigurasi untuk production)
+✅ assets/
+
+
+📤 LANGKAH UPLOAD KE SERVER:
+=============================
+
+STEP 1: Compress Folders
+-------------------------
+1. Klik kanan folder "gembok" → Send to → Compressed (zipped) folder
+   Hasil: gembok.zip
+
+2. Klik kanan folder "public_html" → Send to → Compressed (zipped) folder
+   Hasil: public_html.zip
+
+
+STEP 2: Upload via cPanel File Manager
+---------------------------------------
+1. Login cPanel: https://anoa.kencang.com:2083/
+2. Buka "File Manager"
+3. Navigate ke: /home/alijayan/
+4. Upload "gembok.zip"
+5. Klik kanan gembok.zip → Extract
+6. Rename hasil extract menjadi: gembok.alijaya.net
+
+
+STEP 3: Upload Public Files
+----------------------------
+1. Di File Manager, navigate ke: /home/alijayan/public_html/
+2. Upload "public_html.zip"
+3. Klik kanan public_html.zip → Extract
+4. Pilih "Yes" untuk overwrite existing files
+5. Hapus public_html.zip (optional)
+
+
+STEP 4: Buat Database di cPanel
+--------------------------------
+1. Di cPanel, cari "MySQL® Databases"
+2. Create New Database:
+   - Database Name: gembok
+   - Note: Full name akan jadi: alijayan_gembok
+
+3. Create New User:
+   - Username: gembok
+   - Password: [BUAT PASSWORD KUAT!]
+   - Example: p@ssW0rd!2025
+
+4. Add User To Database:
+   - User: alijayan_gembok
+   - Database: alijayan_gembok
+   - Privileges: ALL PRIVILEGES
+
+
+STEP 5: Edit File .env
+----------------------
+1. Di File Manager, navigate ke: /home/alijayan/gembok.alijaya.net/
+2. Klik kanan file ".env" → Edit
+3. Cari baris ini:
+
+   database.default.password = GANTI_PASSWORD_DISINI
+   DB_PASS=GANTI_PASSWORD_DISINI
+
+4. Ganti dengan password database yang Anda buat di Step 4
+5. Save & Close
+
+
+STEP 6: Run Installer
+---------------------
+1. Buka browser
+2. Akses: https://gembok.alijaya.net/install.php
+3. Tunggu sampai selesai
+4. Jika sukses, akan muncul "Install Succeeded!"
+
+
+STEP 7: Test Login
+-------------------
+Admin Panel:
+  URL: https://gembok.alijaya.net/admin/login
+  Username: admin
+  Password: admin123
+  
+  ⚠️ GANTI PASSWORD SETELAH LOGIN!
+
+Portal Pelanggan:
+  URL: https://gembok.alijaya.net/login
+
+
+✅ VERIFICATION CHECKLIST:
+==========================
+
+Test URL berikut untuk memastikan semua bekerja:
+
+□ https://gembok.alijaya.net/
+  Expected: Welcome page atau redirect ke login
+
+□ https://gembok.alijaya.net/admin/login
+  Expected: Admin login page
+
+□ https://gembok.alijaya.net/login
+  Expected: Portal pelanggan login (neon design)
+
+□ https://gembok.alijaya.net/install.php
+  Expected: Database installer
+
+□ https://gembok.alijaya.net/api/onuLocations
+  Expected: JSON output (walaupun kosong)
+
+
+🔍 TROUBLESHOOTING:
+===================
+
+Error 500 "Internal Server Error":
+----------------------------------
+→ Cek permissions:
+  - Files: 644
+  - Folders: 755
+  - Command di Terminal:
+    find /home/alijayan/public_html -type f -exec chmod 644 {} \;
+    find /home/alijayan/public_html -type d -exec chmod 755 {} \;
+
+Error "Vendor folder not found":
+--------------------------------
+→ ROOTPATH salah. Edit /home/alijayan/public_html/index.php
+→ Pastikan line 24: define('ROOTPATH', '/home/alijayan/gembok.alijaya.net/');
+
+Error 404 di semua route kecuali homepage:
+------------------------------------------
+→ mod_rewrite tidak aktif
+→ Di cPanel: Software → Select PHP Version → Extensions
+→ Cari "mod_rewrite" → Enable
+
+Database connection error:
+--------------------------
+→ Cek .env file
+→ Pastikan:
+  - Database name benar (alijayan_gembok)
+  - Username benar (alijayan_gembok)
+  - Password benar
+
+
+🔐 SECURITY CHECKLIST:
+======================
+
+After successful installation:
+
+□ Change admin password
+□ Set strong database password
+□ Update CRON_SECRET in .env
+□ Set MikroTik credentials in .env
+□ Verify .env file is NOT accessible from web
+  Test: https://gembok.alijaya.net/.env (should be 403/404)
+
+
+📞 SUPPORT:
+===========
+
+Jika masih ada masalah:
+1. Cek error log di cPanel: Metrics → Errors
+2. Screenshot error dan kirim ke support
+3. Jika perlu remote access, siapkan cPanel login
+
+
+Good luck with your deployment! 🚀
+
+═══════════════════════════════════════════════════════════
+
+File ini dibuat otomatis oleh preparation script
+Tanggal: 22 Desember 2025
