@@ -1,0 +1,45 @@
+# [Environment]
+CI_ENVIRONMENT = production
+app.baseURL = "https://gembokphp.alijaya.net/"
+
+# -------------------------------------------------
+# [Database]
+# PENTING: Ganti password sesuai database cPanel!
+# -------------------------------------------------
+database.default.hostname = localhost
+database.default.database = alijaya
+database.default.username = alijaya
+database.default.password = alijaya
+database.default.DBDriver = MySQLi
+
+# Legacy keys (for installer)
+DB_HOST=localhost
+DB_NAME=alijaya
+DB_USER=alijaya
+DB_PASS=alijaya
+
+# -------------------------------------------------
+# [MikroTik Router]
+# -------------------------------------------------
+MIKROTIK_HOST=192.168.1.1
+MIKROTIK_PORT=8728
+MIKROTIK_USER=admin
+MIKROTIK_PASS=admin
+
+# -------------------------------------------------
+# [GenieACS]
+# -------------------------------------------------
+GENIEACS_URL=http://192.168.1.1:7557
+GENIEACS_USERNAME=acs
+GENIEACS_PASSWORD=acs
+
+# -------------------------------------------------
+# [WhatsApp Bot]
+# -------------------------------------------------
+WHATSAPP_API_URL=
+WHATSAPP_TOKEN=
+
+# -------------------------------------------------
+# [Security]
+# -------------------------------------------------
+CRON_SECRET=gembok_production_secret_2025

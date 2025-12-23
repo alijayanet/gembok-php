@@ -1,0 +1,36 @@
+{
+    "name": "gembok/php-clone",
+    "description": "Port of wa-admin-portal to PHP (CodeIgniter 4) with modern dark/light UI",
+    "type": "project",
+    "require": {
+        "php": "^8.0",
+        "codeigniter4/framework": "4.3.8",
+        "guzzlehttp/guzzle": "^7.5",
+        "evilfreelancer/routeros-api-php": "^1.4",
+        "monolog/monolog": "^2.8",
+        "vlucas/phpdotenv": "^5.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app",
+            "Config\\": "app/Config"
+        }
+    },
+    "scripts": {
+        "post-create-project-cmd": [
+            "php spark install:auth"
+        ]
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+        "audit": {
+            "ignore": [
+                "PKSA-7ybs-j1bv-y5mc",
+                "PKSA-qbjf-dc24-wrff",
+                "PKSA-j54j-8c7k-rccq",
+                "PKSA-mscv-ktn8-2rsz"
+            ]
+        }
+    }
+}
