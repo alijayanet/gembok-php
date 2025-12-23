@@ -52,6 +52,63 @@
             --sidebar-width: 260px;
             --sidebar-collapsed: 70px;
         }
+
+        /* Light Theme Overrides */
+        [data-theme="light"] {
+            --bg-primary: #f4f6f8;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --bg-sidebar: #ffffff;
+            
+            --neon-cyan: #008ba3; 
+            --neon-purple: #7b1fa2; 
+            --neon-pink: #d81b60; 
+            --neon-green: #2e7d32;
+            --neon-orange: #f57c00;
+            --neon-red: #d32f2f;
+            
+            --gradient-primary: linear-gradient(135deg, #0288d1 0%, #7b1fa2 100%);
+            
+            --text-primary: #1a1a1a;
+            --text-secondary: #4a4a4a;
+            --text-muted: #757575;
+            
+            --border-color: #e0e0e0;
+            --border-glow: rgba(0,0,0,0.1);
+            
+            --shadow-neon: 0 0 10px rgba(0, 139, 163, 0.3);
+            --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Light Theme Fixes */
+        [data-theme="light"] .sidebar {
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            border-right: 1px solid var(--border-color);
+        }
+        [data-theme="light"] .menu-item:hover, 
+        [data-theme="light"] .submenu-item:hover {
+            background: #f5f5f5;
+        }
+        [data-theme="light"] .form-control {
+            background: #fff;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+        [data-theme="light"] .datatable-selector, 
+        [data-theme="light"] .datatable-input,
+        [data-theme="light"] .datatable-table {
+            background: #fff !important;
+            color: #333 !important;
+            border-color: #e0e0e0 !important;
+        }
+        [data-theme="light"] .top-header { background: #ffffff; }
+        [data-theme="light"] .sidebar-toggle { background: #eee; border-color: #ddd; color: #555; }
+        [data-theme="light"] .header-btn { background: #f0f0f0; border-color: #ddd; color: #555; }
+        [data-theme="light"] .btn-secondary { background: #fff; border-color: #ddd; color: #333; }
+        [data-theme="light"] .badge-success { background: #e8f5e9; color: #2e7d32; }
+        [data-theme="light"] .badge-danger { background: #ffebee; color: #c62828; }
+        [data-theme="light"] .mobile-toggle { color: #333; }
+        [data-theme="light"] .data-table tr:hover { background: #f9f9f9; }
         
         * {
             margin: 0;
@@ -672,28 +729,155 @@
         }
         
         
-        /* Responsive */
+            /* Responsive Mobile Styles */
         @media (max-width: 768px) {
             .sidebar {
-                width: var(--sidebar-collapsed);
+                transform: translateX(-100%);
+                width: var(--sidebar-width);
+                z-index: 1050;
+                box-shadow: 10px 0 20px rgba(0,0,0,0.5);
             }
             
-            .sidebar .sidebar-title,
-            .sidebar .menu-text,
-            .sidebar .menu-badge,
-            .sidebar .menu-section {
-                display: none;
+            .sidebar.mobile-open {
+                transform: translateX(0);
             }
             
             .main-content {
-                margin-left: var(--sidebar-collapsed);
+                margin-left: 0;
+                width: 100%; /* Ensure full width */
+                overflow-x: hidden; /* Prevent page scroll horizontal */
+            }
+            
+            .sidebar.collapsed ~ .main-content {
+                margin-left: 0;
+            }
+            
+            .top-header {
+                padding: 0 1rem;
             }
             
             .page-content {
                 padding: 1rem;
+                overflow-x: hidden; /* Prevent content overflow */
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            /* Make grids inside settings page single column */
+            div[style*="grid-template-columns: 1fr 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
+            
+            /* TABLE RESPONSIVENESS FIX */
+            .card {
+                padding: 1rem;
+                overflow: hidden; /* Prevent card overflow */
+            }
+
+            /* Wrapper for DataTables */
+            .datatable-wrapper {
+                width: 100%;
+                overflow-x: auto; /* Scroll horizontal if absolutely needed */
+                -webkit-overflow-scrolling: touch;
+                margin: 0;
+            }
+            
+            .datatable-table {
+                width: 100% !important;
+                /* min-width: 600px; REMOVED to allow fitting in screen if possible */
+                table-layout: auto;
+            }
+            
+            /* General Table Responsive */
+            .table-responsive {
+                display: block;
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            table {
+                width: 100% !important;
+            }
+            
+            /* Compact Data Cells for Mobile */
+            .datatable-table th, .datatable-table td,
+            table th, table td {
+                white-space: normal !important; /* Force text wrap */
+                word-wrap: break-word;
+                font-size: 0.75rem !important; /* Smaller font (approx 12px) */
+                padding: 0.5rem 0.25rem !important; /* Minimal padding */
+                vertical-align: top;
+            }
+            
+            /* Make action buttons smaller and stackable */
+            table .btn, .datatable-table .btn {
+                padding: 0.2rem 0.4rem !important;
+                font-size: 0.7rem !important;
+                display: inline-block;
+                margin: 1px;
+            }
+            
+            /* Hide less important columns on mobile if needed (add class .hidemobile manually to columns later if desired) */
+            .hidemobile {
+                display: none;
+            }
+
+            /* Responsive Utilities */
+            .hidden-mobile {
+                display: none !important;
+            }
+            
+            .show-mobile {
+                display: block !important;
+            }
+        }
+        
+        /* Overlay for mobile sidebar */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1040;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .sidebar-overlay.show {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Hamburger Menu */
+        .mobile-toggle {
+            display: none;
+            margin-right: 1rem;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-toggle {
+                display: block;
             }
         }
     </style>
+    <script>
+        // Init Theme from LocalStorage immediately to prevent flash
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
 </head>
 <body>
     <!-- Sidebar -->
@@ -806,8 +990,14 @@
     <!-- Main Content -->
     <main class="main-content">
         <header class="top-header">
+            <button class="mobile-toggle" onclick="toggleSidebarMobile()">
+                <i class="fas fa-bars"></i>
+            </button>
             <h1 class="page-title"><?= $this->renderSection('page_title') ?></h1>
             <div class="header-actions">
+                <button class="header-btn" onclick="toggleTheme()" title="Ganti Tema">
+                    <i class="fas fa-moon theme-icon"></i>
+                </button>
                 <button class="header-btn" title="Notifications">
                     <i class="fas fa-bell"></i>
                 </button>
@@ -841,6 +1031,9 @@
             <?= $this->renderSection('content') ?>
         </div>
     </main>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div class="sidebar-overlay" onclick="toggleSidebarMobile()"></div>
     
     <style>
         /* Loading Bar */
@@ -910,6 +1103,89 @@
         }
     </style>
     
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-bottom-nav">
+        <a href="<?= base_url('admin/dashboard') ?>" class="nav-item <?= uri_string() === 'admin/dashboard' || uri_string() === '' ? 'active' : '' ?>">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        <a href="<?= base_url('admin/billing/customers') ?>" class="nav-item <?= strpos(uri_string(), 'billing/customers') !== false ? 'active' : '' ?>">
+            <i class="fas fa-users"></i>
+            <span>Pelanggan</span>
+        </a>
+        <a href="<?= base_url('admin/billing/invoices') ?>" class="nav-item <?= strpos(uri_string(), 'billing/invoices') !== false ? 'active' : '' ?>">
+            <i class="fas fa-file-invoice-dollar"></i>
+            <span>Tagihan</span>
+        </a>
+        <a href="<?= base_url('admin/map') ?>" class="nav-item <?= strpos(uri_string(), 'map') !== false ? 'active' : '' ?>">
+            <i class="fas fa-map-marked-alt"></i>
+            <span>Map</span>
+        </a>
+        <div class="nav-item" onclick="toggleSidebarMobile()">
+            <i class="fas fa-bars"></i>
+            <span>Menu</span>
+        </div>
+    </nav>
+    
+    <style>
+        /* Bottom Navigation Styles */
+        .mobile-bottom-nav {
+            display: none; /* Default hidden on desktop */
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(20, 20, 35, 0.95); /* Matches var(--bg-card) mostly */
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border-color);
+            height: 60px;
+            z-index: 1060;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        
+        .mobile-bottom-nav .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .mobile-bottom-nav .nav-item i {
+            font-size: 1.25rem;
+            margin-bottom: 2px;
+        }
+        
+        .mobile-bottom-nav .nav-item.active {
+            color: var(--neon-cyan);
+            border-top: 2px solid var(--neon-cyan);
+        }
+        
+        .mobile-bottom-nav .nav-item:active {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-bottom-nav {
+                display: flex;
+            }
+            
+            /* Add padding to body so content isn't covered by nav */
+            .page-content {
+                padding-bottom: 70px !important;
+            }
+            
+            /* Hide hamburger on top header since we have bottom menu now? 
+               Optional: I'll keep top toggle as well for flexibility, 
+               or you can hide it with: .top-header .mobile-toggle { display: none; } */
+        }
+    </style>
+    
     <script>
         // ==============================================
         // TURBO NAVIGATION SYSTEM - OPTIMIZED
@@ -953,7 +1229,9 @@
             },
             
             handleClick(e) {
-                const link = e.target.closest('a[href]');
+                // Handle bottom nav clicks specifically or general links
+                const link = e.target.closest('a[href]') || e.target.closest('.nav-item a');
+                
                 if (!link) return;
                 
                 const href = link.getAttribute('href');
@@ -975,6 +1253,11 @@
                 // Instant visual feedback
                 link.style.opacity = '0.6';
                 setTimeout(() => link.style.opacity = '', 150);
+                
+                // CLOSE SIDEBAR ON MOBILE AFTER CLICK
+                if (window.innerWidth <= 768 && document.getElementById('sidebar').classList.contains('mobile-open')) {
+                    toggleSidebarMobile();
+                }
                 
                 this.navigate(href);
             },
@@ -1125,12 +1408,14 @@
             
             updateActiveMenu(url) {
                 // Remove current active states
-                document.querySelectorAll('.menu-item.active, .submenu-item.active').forEach(el => {
+                document.querySelectorAll('.menu-item.active, .submenu-item.active, .nav-item.active').forEach(el => {
                     el.classList.remove('active');
                 });
                 
                 // Find and activate matching menu item
                 const path = new URL(url, window.location.origin).pathname;
+                
+                // Update Sidebar
                 document.querySelectorAll('.menu-item, .submenu-item').forEach(link => {
                     const href = link.getAttribute('href');
                     if (href && path.endsWith(href.replace(/^.*\/public/, '').replace(/^\//, ''))) {
@@ -1144,20 +1429,55 @@
                         }
                     }
                 });
+                
+                // Update Bottom Nav
+                document.querySelectorAll('.mobile-bottom-nav .nav-item').forEach(link => {
+                     const href = link.getAttribute('href');
+                     if (href && path.includes(href)) { // Use simple includes for bottom nav
+                         link.classList.add('active');
+                     }
+                });
             }
         };
         
         // Initialize when DOM is ready
-        document.addEventListener('DOMContentLoaded', () => TurboNav.init());
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            TurboNav.init();
+            updateThemeIcon();
+        });
         
         // ==============================================
         // EXISTING FUNCTIONS
         // ==============================================
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon();
+        }
+        
+        function updateThemeIcon() {
+            const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+            const icon = document.querySelector('.theme-icon');
+            if (icon) {
+                icon.className = theme === 'light' ? 'fas fa-sun theme-icon' : 'fas fa-moon theme-icon';
+            }
+        }
         
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             sidebar.classList.toggle('collapsed');
             localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        }
+        
+        function toggleSidebarMobile() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+            sidebar.classList.toggle('mobile-open');
+            overlay.classList.toggle('show');
         }
         
         function toggleSubmenu(element) {
