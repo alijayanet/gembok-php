@@ -1,0 +1,35 @@
+ERROR - 2025-12-22 06:07:14 --> Error connecting to the database: mysqli_sql_exception: Access denied for user ''@'localhost' (using password: NO) in C:\xampp3\htdocs\gembok-php\vendor\codeigniter4\framework\system\Database\MySQLi\Connection.php:174
+Stack trace:
+#0 C:\xampp3\htdocs\gembok-php\vendor\codeigniter4\framework\system\Database\MySQLi\Connection.php(174): mysqli->real_connect('localhost', '', '', '', 3306, '', 0)
+#1 C:\xampp3\htdocs\gembok-php\vendor\codeigniter4\framework\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 C:\xampp3\htdocs\gembok-php\vendor\codeigniter4\framework\system\Database\BaseConnection.php(574): CodeIgniter\Database\BaseConnection->initialize()
+#3 C:\xampp3\htdocs\gembok-php\vendor\codeigniter4\framework\system\Database\BaseBuilder.php(1616): CodeIgniter\Database\BaseConnection->query('SELECT `id`, `n...', Array, false)
+#4 C:\xampp3\htdocs\gembok-php\app\Controllers\Api.php(20): CodeIgniter\Database\BaseBuilder->get()
+#5 C:\xampp3\htdocs\gembok-php\vendor\codeigniter4\framework\system\CodeIgniter.php(932): App\Controllers\Api->onuLocations()
+#6 C:\xampp3\htdocs\gembok-php\vendor\codeigniter4\framework\system\CodeIgniter.php(497): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Api))
+#7 C:\xampp3\htdocs\gembok-php\vendor\codeigniter4\framework\system\CodeIgniter.php(366): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#8 C:\xampp3\htdocs\gembok-php\public\index.php(85): CodeIgniter\CodeIgniter->run()
+#9 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Access denied for user ''@'localhost' (using password: NO) in C:\xampp3\htdocs\gembok-php\vendor\codeigniter4\framework\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 C:\xampp3\htdocs\gembok-php\vendor\codeigniter4\framework\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 C:\xampp3\htdocs\gembok-php\vendor\codeigniter4\framework\system\Database\BaseConnection.php(574): CodeIgniter\Database\BaseConnection->initialize()
+#2 C:\xampp3\htdocs\gembok-php\vendor\codeigniter4\framework\system\Database\BaseBuilder.php(1616): CodeIgniter\Database\BaseConnection->query('SELECT `id`, `n...', Array, false)
+#3 C:\xampp3\htdocs\gembok-php\app\Controllers\Api.php(20): CodeIgniter\Database\BaseBuilder->get()
+#4 C:\xampp3\htdocs\gembok-php\vendor\codeigniter4\framework\system\CodeIgniter.php(932): App\Controllers\Api->onuLocations()
+#5 C:\xampp3\htdocs\gembok-php\vendor\codeigniter4\framework\system\CodeIgniter.php(497): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Api))
+#6 C:\xampp3\htdocs\gembok-php\vendor\codeigniter4\framework\system\CodeIgniter.php(366): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#7 C:\xampp3\htdocs\gembok-php\public\index.php(85): CodeIgniter\CodeIgniter->run()
+#8 {main}
+CRITICAL - 2025-12-22 06:07:14 --> Unable to connect to the database.
+Main connection [MySQLi]: Access denied for user ''@'localhost' (using password: NO)
+in SYSTEMPATH\Database\BaseConnection.php on line 427.
+ 1 SYSTEMPATH\Database\BaseConnection.php(574): CodeIgniter\Database\BaseConnection->initialize()
+ 2 SYSTEMPATH\Database\BaseBuilder.php(1616): CodeIgniter\Database\BaseConnection->query('SELECT `id`, `name`, `serial_number` as `serial`, `lat`, `lng`
+FROM `onu_locations`', [], false)
+ 3 APPPATH\Controllers\Api.php(20): CodeIgniter\Database\BaseBuilder->get()
+ 4 SYSTEMPATH\CodeIgniter.php(932): App\Controllers\Api->onuLocations()
+ 5 SYSTEMPATH\CodeIgniter.php(497): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Api))
+ 6 SYSTEMPATH\CodeIgniter.php(366): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 7 FCPATH\index.php(85): CodeIgniter\CodeIgniter->run()
