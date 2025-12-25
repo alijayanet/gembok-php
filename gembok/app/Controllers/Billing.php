@@ -72,6 +72,23 @@ class Billing extends BaseController
 
     public function addPackage()
     {
+        // INPUT VALIDATION
+        $validation = \Config\Services::validation();
+        
+        $validation->setRules([
+            'name' => 'required|min_length[3]|max_length[100]|is_unique[packages.name]',
+            'price' => 'required|numeric|greater_than[0]',
+            'profile_normal' => 'required|alpha_numeric_punct|min_length[1]|max_length[50]',
+            'profile_isolir' => 'required|alpha_numeric_punct|min_length[1]|max_length[50]',
+        ]);
+
+        if (!$validation->withRequest($this->request)->run()) {
+            $errors = $validation->getErrors();
+            $errorMsg = implode(', ', $errors);
+            session()->setFlashdata('error', '❌ Validasi gagal: ' . $errorMsg);
+            return redirect()->back()->withInput();
+        }
+
         $data = [
             'name' => $this->request->getPost('name'),
             'price' => $this->request->getPost('price'),
@@ -141,6 +158,40 @@ class Billing extends BaseController
 
     public function addCustomer()
     {
+        // ========================================
+        // INPUT VALIDATION
+        // ========================================
+        $validation = \Config\Services::validation();
+        
+        $validation->setRules([
+            'name' => 'required|min_length[3]|max_length[100]',
+            'phone' => 'permit_empty|numeric|min_length[10]|max_length[15]',
+            'pppoe_username' => 'required|alpha_numeric_punct|min_length[3]|max_length[50]|is_unique[customers.pppoe_username]',
+            'package_id' => 'required|numeric',
+            'isolation_date' => 'required|numeric|greater_than[0]|less_than[32]',
+        ]);
+
+        if (!$validation->withRequest($this->request)->run()) {
+            $errors = $validation->getErrors();
+            $errorMsg = implode(', ', $errors);
+            session()->setFlashdata('error', '❌ Validasi gagal: ' . $errorMsg);
+            return redirect()->back()->withInput();
+        }
+
+        // ========================================
+        // CHECK IF SHOULD CREATE PPPOE USER
+        // ========================================
+        $createPppoe = $this->request->getPost('create_pppoe') === '1';
+
+        // ========================================
+        // SET PPPOE PASSWORD = USERNAME (SIMPLE)
+        // ========================================
+        // For simplicity: username and password are the same
+        $pppoePassword = $this->request->getPost('pppoe_username');
+
+        // ========================================
+        // PREPARE CUSTOMER DATA
+        // ========================================
         $data = [
             'name' => $this->request->getPost('name'),
             'phone' => $this->request->getPost('phone'),
@@ -150,23 +201,85 @@ class Billing extends BaseController
             'lat' => $this->request->getPost('lat'),
             'lng' => $this->request->getPost('lng'),
             'address' => $this->request->getPost('address'),
+            'email' => $this->request->getPost('email'),
             'status' => 'active' 
         ];
 
+        // ========================================
+        // GET PACKAGE PROFILE FOR MIKROTIK
+        // ========================================
+        $package = $this->db->table('packages')
+            ->where('id', $data['package_id'])
+            ->get()->getRowArray();
+
+        if (!$package) {
+            session()->setFlashdata('error', '❌ Paket tidak ditemukan');
+            return redirect()->back()->withInput();
+        }
+
+        // ========================================
+        // CREATE PPPOE USER IN MIKROTIK (OPTIONAL)
+        // ========================================
+        $mikrotikSuccess = false;
+        $mikrotikError = '';
+        $mikrotikSkipped = false;
+
+        if ($createPppoe) {
+            // User wants to create PPPoE user
+            if ($this->mikrotik->isConnected()) {
+                try {
+                    $result = $this->mikrotik->addPppoeSecret(
+                        $data['pppoe_username'],
+                        $pppoePassword,
+                        $package['profile_normal'] ?? 'default'
+                    );
+
+                    if ($result) {
+                        $mikrotikSuccess = true;
+                    } else {
+                        $mikrotikError = $this->mikrotik->getLastError();
+                    }
+                } catch (\Exception $e) {
+                    $mikrotikError = $e->getMessage();
+                }
+            } else {
+                $mikrotikError = 'Tidak dapat terhubung ke MikroTik: ' . $this->mikrotik->getLastError();
+            }
+        } else {
+            // User skipped PPPoE creation (already exists in MikroTik)
+            $mikrotikSkipped = true;
+        }
+
+        // ========================================
+        // INSERT TO DATABASE
+        // ========================================
         $this->db->table('customers')->insert($data);
+        $customerId = $this->db->insertID();
         
-        // If coordinates provided, also add to onu_locations map
+        // ========================================
+        // ADD TO ONU MAP IF COORDINATES PROVIDED
+        // ========================================
         if (!empty($data['lat']) && !empty($data['lng'])) {
             $this->db->table('onu_locations')->insert([
                 'name' => $data['name'],
                 'serial_number' => $data['pppoe_username'] . '-ONU', // Placeholder serial
                 'lat' => $data['lat'],
                 'lng' => $data['lng'],
-                'customer_id' => $this->db->insertID()
+                'customer_id' => $customerId
             ]);
         }
         
-        session()->setFlashdata('msg', 'Pelanggan berhasil ditambahkan');
+        // ========================================
+        // SUCCESS MESSAGE WITH MIKROTIK STATUS
+        // ========================================
+        if ($mikrotikSkipped) {
+            session()->setFlashdata('msg', "✅ Pelanggan berhasil ditambahkan. PPPoE user '<strong>{$data['pppoe_username']}</strong>' diasumsikan sudah ada di MikroTik.");
+        } elseif ($mikrotikSuccess) {
+            session()->setFlashdata('msg', "✅ Pelanggan berhasil ditambahkan. PPPoE user '<strong>{$data['pppoe_username']}</strong>' dibuat di MikroTik dengan password: <code>{$pppoePassword}</code>");
+        } else {
+            session()->setFlashdata('warning', "⚠️ Pelanggan tersimpan di database, TAPI gagal create PPPoE user di MikroTik: {$mikrotikError}. Silakan buat manual atau coba lagi. Password yang di-generate: <code>{$pppoePassword}</code>");
+        }
+
         return redirect()->to('/admin/billing/customers');
     }
 
@@ -220,8 +333,12 @@ class Billing extends BaseController
                 $isoDay = $c['isolation_date'] ?? 20;
                 $dueDate = date('Y-m-') . str_pad($isoDay, 2, '0', STR_PAD_LEFT);
                 
+                // Generate Invoice Number: INV-YYYYMM-CUSTID
+                $invNumber = 'INV-' . date('Ym') . '-' . $c['id'];
+                
                 $data = [
                     'customer_id' => $c['id'],
+                    'invoice_number' => $invNumber,
                     'amount' => $c['price'],
                     'description' => 'Tagihan Internet Bulan ' . date('F Y'),
                     'due_date' => $dueDate,

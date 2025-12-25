@@ -291,9 +291,11 @@ class MikrotikService
         return $this->lastError;
     }
 
-    public function getPppoeActive(): array
+    public function getActivePppoe(): array
     {
-        return $this->query('/ppp/active/print');
+        return $this->query('/ppp/active/print', [
+            '.proplist' => 'name,address,uptime,service'
+        ]);
     }
 
     public function getPppoeSecrets(): array
@@ -313,12 +315,16 @@ class MikrotikService
 
     public function getHotspotProfiles(): array
     {
-        return $this->query('/ip/hotspot/user/profile/print');
+        return $this->query('/ip/hotspot/user/profile/print', [
+            '.proplist' => 'name'
+        ]);
     }
 
-    public function getHotspotActive(): array
+    public function getActiveHotspotUsers(): array
     {
-        return $this->query('/ip/hotspot/active/print');
+        return $this->query('/ip/hotspot/active/print', [
+            '.proplist' => 'user,address,uptime'
+        ]);
     }
 
     public function getPppoeActiveCount(): int
@@ -375,5 +381,497 @@ class MikrotikService
         // Also kick active connection
         $this->kickPppoeUser($username);
         return true;
+    }
+
+    // ==========================================
+    // PPPoE SECRET MANAGEMENT (CRUD)
+    // ==========================================
+
+    /**
+     * Add new PPPoE user
+     */
+    public function addPppoeSecret(string $username, string $password, string $profile = 'default', string $service = 'pppoe'): bool
+    {
+        if (empty($username) || empty($password)) {
+            $this->lastError = 'Username dan password wajib diisi';
+            return false;
+        }
+
+        try {
+            $this->query('/ppp/secret/add', [
+                'name' => $username,
+                'password' => $password,
+                'profile' => $profile,
+                'service' => $service
+            ]);
+            return true;
+        } catch (\Exception $e) {
+            $this->lastError = $e->getMessage();
+            return false;
+        }
+    }
+
+    /**
+     * Update PPPoE user (password and/or profile)
+     */
+    public function updatePppoeSecret(string $username, array $data): bool
+    {
+        $users = $this->query('/ppp/secret/print', ['?name' => $username]);
+        if (empty($users)) {
+            $this->lastError = 'User tidak ditemukan';
+            return false;
+        }
+
+        $id = $users[0]['.id'];
+        $params = ['.id' => $id];
+
+        // Only update provided fields
+        if (isset($data['password']) && !empty($data['password'])) {
+            $params['password'] = $data['password'];
+        }
+        if (isset($data['profile'])) {
+            $params['profile'] = $data['profile'];
+        }
+        if (isset($data['service'])) {
+            $params['service'] = $data['service'];
+        }
+
+        try {
+            $this->query('/ppp/secret/set', $params);
+            
+            // If profile changed, kick user to apply new profile
+            if (isset($data['profile'])) {
+                $this->kickPppoeUser($username);
+            }
+            
+            return true;
+        } catch (\Exception $e) {
+            $this->lastError = $e->getMessage();
+            return false;
+        }
+    }
+
+    /**
+     * Delete PPPoE user
+     */
+    public function deletePppoeSecret(string $username): bool
+    {
+        $users = $this->query('/ppp/secret/print', ['?name' => $username]);
+        if (empty($users)) {
+            $this->lastError = 'User tidak ditemukan';
+            return false;
+        }
+
+        try {
+            // Kick active connection first
+            $this->kickPppoeUser($username);
+            
+            // Then delete the secret
+            $this->query('/ppp/secret/remove', ['.id' => $users[0]['.id']]);
+            return true;
+        } catch (\Exception $e) {
+            $this->lastError = $e->getMessage();
+            return false;
+        }
+    }
+
+    // ==========================================
+    // HOTSPOT USER MANAGEMENT (CRUD)
+    // ==========================================
+
+    /**
+     * Add Hotspot user
+     * Automatically adds comment: 'vc-username-gembok' for vouchers, 'up-username-gembok' for permanent users
+     */
+    public function addHotspotUser(string $username, string $password, string $profile = 'default', string $limitUptime = ''): bool
+    {
+        if (empty($username) || empty($password)) {
+            $this->lastError = 'Username dan password wajib diisi';
+            return false;
+        }
+
+        try {
+            $params = [
+                'name' => $username,
+                'password' => $password,
+                'profile' => $profile
+            ];
+
+            // Add limit-uptime if provided
+            if (!empty($limitUptime)) {
+                $params['limit-uptime'] = $limitUptime;
+                // Add comment with 'vc' prefix for vouchers + gembok tag
+                $params['comment'] = 'vc-' . $username . '-gembok';
+            } else {
+                // Add comment with 'up' prefix for permanent users + gembok tag
+                $params['comment'] = 'up-' . $username . '-gembok';
+            }
+
+            $this->query('/ip/hotspot/user/add', $params);
+            return true;
+        } catch (\Exception $e) {
+            $this->lastError = $e->getMessage();
+            return false;
+        }
+    }
+
+    /**
+     * Update Hotspot user
+     * Updates comment based on limit-uptime presence (includes gembok tag)
+     */
+    public function updateHotspotUser(string $username, array $data): bool
+    {
+        $users = $this->query('/ip/hotspot/user/print', ['?name' => $username]);
+        if (empty($users)) {
+            $this->lastError = 'User tidak ditemukan';
+            return false;
+        }
+
+        $id = $users[0]['.id'];
+        $params = ['.id' => $id];
+
+        if (isset($data['password']) && !empty($data['password'])) {
+            $params['password'] = $data['password'];
+        }
+        if (isset($data['profile'])) {
+            $params['profile'] = $data['profile'];
+        }
+        if (isset($data['limit_uptime'])) {
+            $params['limit-uptime'] = $data['limit_uptime'];
+            // Update comment: 'vc' if has limit-uptime, 'up' if empty/removed (with gembok tag)
+            if (!empty($data['limit_uptime'])) {
+                $params['comment'] = 'vc-' . $username . '-gembok';
+            } else {
+                $params['comment'] = 'up-' . $username . '-gembok';
+            }
+        }
+
+        try {
+            $this->query('/ip/hotspot/user/set', $params);
+            return true;
+        } catch (\Exception $e) {
+            $this->lastError = $e->getMessage();
+            return false;
+        }
+    }
+
+    /**
+     * Delete Hotspot user
+     */
+    public function deleteHotspotUser(string $username): bool
+    {
+        $users = $this->query('/ip/hotspot/user/print', ['?name' => $username]);
+        if (empty($users)) {
+            $this->lastError = 'User tidak ditemukan';
+            return false;
+        }
+
+        try {
+            // Kick active session first if exists
+            $active = $this->query('/ip/hotspot/active/print', ['?user' => $username]);
+            if (!empty($active)) {
+                $this->query('/ip/hotspot/active/remove', ['.id' => $active[0]['.id']]);
+            }
+            
+            // Delete user
+            $this->query('/ip/hotspot/user/remove', ['.id' => $users[0]['.id']]);
+            return true;
+        } catch (\Exception $e) {
+            $this->lastError = $e->getMessage();
+            return false;
+        }
+    }
+
+    // ==========================================
+    // PPPoE PROFILE MANAGEMENT
+    // ==========================================
+
+    /**
+     * Add PPPoE Profile
+     */
+    public function addPppoeProfile(string $name, string $rateLimit = '', string $localAddress = '', string $remoteAddress = ''): bool
+    {
+        if (empty($name)) {
+            $this->lastError = 'Nama profile wajib diisi';
+            return false;
+        }
+
+        try {
+            $params = ['name' => $name];
+            
+            if (!empty($rateLimit)) {
+                $params['rate-limit'] = $rateLimit;
+            }
+            if (!empty($localAddress)) {
+                $params['local-address'] = $localAddress;
+            }
+            if (!empty($remoteAddress)) {
+                $params['remote-address'] = $remoteAddress;
+            }
+
+            $this->query('/ppp/profile/add', $params);
+            return true;
+        } catch (\Exception $e) {
+            $this->lastError = $e->getMessage();
+            return false;
+        }
+    }
+
+    /**
+     * Update PPPoE Profile
+     */
+    public function updatePppoeProfile(string $name, array $data): bool
+    {
+        $profiles = $this->query('/ppp/profile/print', ['?name' => $name]);
+        if (empty($profiles)) {
+            $this->lastError = 'Profile tidak ditemukan';
+            return false;
+        }
+
+        $id = $profiles[0]['.id'];
+        $params = ['.id' => $id];
+
+        if (isset($data['name'])) {
+            $params['name'] = $data['name'];
+        }
+        if (isset($data['rate_limit'])) {
+            $params['rate-limit'] = $data['rate_limit'];
+        }
+        if (isset($data['local_address'])) {
+            $params['local-address'] = $data['local_address'];
+        }
+        if (isset($data['remote_address'])) {
+            $params['remote-address'] = $data['remote_address'];
+        }
+
+        try {
+            $this->query('/ppp/profile/set', $params);
+            return true;
+        } catch (\Exception $e) {
+            $this->lastError = $e->getMessage();
+            return false;
+        }
+    }
+
+    /**
+     * Delete PPPoE Profile
+     */
+    public function deletePppoeProfile(string $name): bool
+    {
+        // Don't allow deleting default profiles
+        if (in_array($name, ['default', 'default-encryption'])) {
+            $this->lastError = 'Profile default tidak dapat dihapus';
+            return false;
+        }
+
+        $profiles = $this->query('/ppp/profile/print', ['?name' => $name]);
+        if (empty($profiles)) {
+            $this->lastError = 'Profile tidak ditemukan';
+            return false;
+        }
+
+        try {
+            $this->query('/ppp/profile/remove', ['.id' => $profiles[0]['.id']]);
+            return true;
+        } catch (\Exception $e) {
+            $this->lastError = $e->getMessage();
+            return false;
+        }
+    }
+
+    // ==========================================
+    // HOTSPOT PROFILE MANAGEMENT
+    // ==========================================
+
+    /**
+     * Add Hotspot Profile
+     */
+    public function addHotspotProfile(string $name, int $sharedUsers = 1, string $rateLimit = ''): bool
+    {
+        if (empty($name)) {
+            $this->lastError = 'Nama profile wajib diisi';
+            return false;
+        }
+
+        try {
+            $params = [
+                'name' => $name,
+                'shared-users' => (string)$sharedUsers
+            ];
+
+            if (!empty($rateLimit)) {
+                $params['rate-limit'] = $rateLimit;
+            }
+
+            $this->query('/ip/hotspot/user/profile/add', $params);
+            return true;
+        } catch (\Exception $e) {
+            $this->lastError = $e->getMessage();
+            return false;
+        }
+    }
+
+    /**
+     * Update Hotspot Profile
+     */
+    public function updateHotspotProfile(string $name, array $data): bool
+    {
+        $profiles = $this->query('/ip/hotspot/user/profile/print', ['?name' => $name]);
+        if (empty($profiles)) {
+            $this->lastError = 'Profile tidak ditemukan';
+            return false;
+        }
+
+        $id = $profiles[0]['.id'];
+        $params = ['.id' => $id];
+
+        if (isset($data['name'])) {
+            $params['name'] = $data['name'];
+        }
+        if (isset($data['shared_users'])) {
+            $params['shared-users'] = (string)$data['shared_users'];
+        }
+        if (isset($data['rate_limit'])) {
+            $params['rate-limit'] = $data['rate_limit'];
+        }
+
+        try {
+            $this->query('/ip/hotspot/user/profile/set', $params);
+            return true;
+        } catch (\Exception $e) {
+            $this->lastError = $e->getMessage();
+            return false;
+        }
+    }
+
+    /**
+     * Delete Hotspot Profile
+     */
+    public function deleteHotspotProfile(string $name): bool
+    {
+        // Don't allow deleting default profile
+        if ($name === 'default') {
+            $this->lastError = 'Profile default tidak dapat dihapus';
+            return false;
+        }
+
+        $profiles = $this->query('/ip/hotspot/user/profile/print', ['?name' => $name]);
+        if (empty($profiles)) {
+            $this->lastError = 'Profile tidak ditemukan';
+            return false;
+        }
+
+        try {
+            $this->query('/ip/hotspot/user/profile/remove', ['.id' => $profiles[0]['.id']]);
+            return true;
+        } catch (\Exception $e) {
+            $this->lastError = $e->getMessage();
+            return false;
+        }
+    }
+
+    /**
+     * Enable PPPoE user
+     */
+    public function enablePppoe(string $username): bool
+    {
+        return $this->enablePppoeSecret($username);
+    }
+
+    /**
+     * Disable PPPoE user
+     */
+    public function disablePppoe(string $username): bool
+    {
+        return $this->disablePppoeSecret($username);
+    }
+    
+    /**
+     * Get Hotspot Profile Info (price, duration)
+     * Supports:
+     * 1. Comment format: "HARGA:5000|DURASI:1jam"
+     * 2. On-Login script format (Mikhmon): :put (",rem,2002,1d,3000,,Disable,");
+     */
+    public function getHotspotProfileInfo(string $profileName): ?array
+    {
+        if (!$this->connect()) {
+            return null;
+        }
+        
+        try {
+            // Get hotspot user profile details
+            $this->writeWord('/ip/hotspot/user/profile/print');
+            $this->writeWord('?name=' . $profileName);
+            $this->writeWord('');
+            
+            $response = $this->readResponse();
+            
+            if (empty($response)) {
+                return null;
+            }
+            
+            $profile = $response[0] ?? null;
+            
+            if (!$profile) {
+                return null;
+            }
+            
+            $info = [];
+            
+            // 1. Try Extract from Comment
+            if (isset($profile['comment'])) {
+                $comment = $profile['comment'];
+                if (preg_match('/HARGA:(\d+)/', $comment, $matches)) {
+                    $info['price'] = (int)$matches[1];
+                }
+                if (preg_match('/DURASI:([^|]+)/', $comment, $matches)) {
+                    $info['duration'] = trim($matches[1]);
+                }
+            }
+            
+            // 2. Try Extract from On-Login Script (Mikhmon format)
+            // 2. Try Extract from On-Login Script (Mikhmon format)
+            if ((empty($info['price']) || empty($info['duration'])) && isset($profile['on-login'])) {
+                $script = $profile['on-login'];
+                
+                // NUCLEAR OPTION: Remove ALL whitespace (newlines, spaces, tabs)
+                $cleanScript = preg_replace('/\s+/', '', $script);
+                
+                // Cari marker Mikhmon: ,rem, (WITHOUT QUOTE checking first)
+                // Format matches: ...",rem,BATCH,DURATION,PRICE,...
+                $marker = ',rem,';
+                $startPos = strpos($cleanScript, $marker);
+                
+                if ($startPos !== false) {
+                    // Extract after ,rem,
+                    $sub = substr($cleanScript, $startPos + strlen($marker)); 
+                    
+                    // Explode by comma
+                    $parts = explode(',', $sub);
+                    
+                    // parts[0] = BATCH (e.g. 2002)
+                    // parts[1] = DURATION (e.g. 1d)
+                    // parts[2] = PRICE (e.g. 3000)
+                    
+                    if (count($parts) >= 3) {
+                        // Duration
+                        if (empty($info['duration']) && !empty($parts[1])) {
+                            $info['duration'] = $parts[1]; 
+                        }
+                        
+                        // Price
+                        if (empty($info['price']) && !empty($parts[2]) && is_numeric($parts[2])) {
+                            $info['price'] = (int)$parts[2];
+                        }
+                    }
+                }
+            }
+            
+            return !empty($info) ? $info : null;
+            
+        } catch (\Exception $e) {
+            $this->lastError = $e->getMessage();
+            return null;
+        }
     }
 }

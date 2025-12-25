@@ -15,11 +15,12 @@ class AuthFilter implements FilterInterface
             return redirect()->to('/login');
         }
         // otherwise continue
+        return null;
     }
 
     public function after(RequestInterface $request, ResponseInterface $response, $arguments = null)
     {
         // No post‑processing needed
+        return null;
     }
 }
-?>

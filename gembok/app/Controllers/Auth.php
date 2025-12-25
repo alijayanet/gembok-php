@@ -79,4 +79,3 @@ class Auth extends Controller
         return redirect()->to('/login');
     }
 }
-?>

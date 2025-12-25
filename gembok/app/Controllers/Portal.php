@@ -299,10 +299,13 @@ class Portal extends BaseController
 
     public function payment($invoiceId)
     {
-        if (!session()->get('logged_in')) return redirect()->to(base_url('login'));
-        $phone = session()->get('phone');
+        $phone = session()->get('customer_phone');
+        if (!$phone) {
+            return redirect()->to('/login')->with('error', 'Silakan login terlebih dahulu');
+        }
+        
         $db = \Config\Database::connect();
-        $invoice = $db->table('invoices')->where('id', $invoiceId)->where('customer_phone', $phone)->get()->getRowArray();
+        $invoice = $db->table('invoices')->where('id', $invoiceId)->get()->getRowArray();
         if (!$invoice) return redirect()->back()->with('error', 'Invoice tidak ditemukan.');
         if ($invoice['status'] === 'paid') return redirect()->back()->with('success', 'Invoice ini sudah lunas.');
         
@@ -316,14 +319,17 @@ class Portal extends BaseController
 
     public function processPayment()
     {
-        if (!session()->get('logged_in')) return redirect()->to(base_url('login'));
+        $phone = session()->get('customer_phone');
+        if (!$phone) {
+            return redirect()->to('/login')->with('error', 'Silakan login terlebih dahulu');
+        }
+        
         $invoiceId = $this->request->getPost('invoice_id');
         $method = $this->request->getPost('method');
         if (!$invoiceId || !$method) return redirect()->back()->with('error', 'Metode pembayaran tidak valid.');
 
-        $phone = session()->get('phone');
         $db = \Config\Database::connect();
-        $invoice = $db->table('invoices')->select('invoices.*, customers.name, customers.email, packages.name as pkg_name')->join('customers', 'customers.id = invoices.customer_id')->join('packages', 'packages.id = customers.package_id', 'left')->where('invoices.id', $invoiceId)->where('invoices.customer_phone', $phone)->get()->getRowArray();
+        $invoice = $db->table('invoices')->select('invoices.*, customers.name, customers.email, packages.name as pkg_name')->join('customers', 'customers.id = invoices.customer_id')->join('packages', 'packages.id = customers.package_id', 'left')->where('invoices.id', $invoiceId)->get()->getRowArray();
         if (!$invoice) return redirect()->back()->with('error', 'Invoice gagal diproses.');
         
         $tripay = new \App\Services\TripayService();
@@ -335,6 +341,36 @@ class Portal extends BaseController
         else return redirect()->back()->with('error', 'Tripay Error: ' . ($response['message'] ?? 'Gagal'));
     }
 
+
+    /**
+     * Invoices Page - Daftar Tagihan
+     */
+    public function invoices()
+    {
+        $session = session();
+        $phone = $session->get('customer_phone');
+        
+        if (!$phone) {
+            return redirect()->to('/login')->with('error', 'Silakan login terlebih dahulu');
+        }
+        
+        // Get customer data
+        $customer = $this->customerModel->where('phone', $phone)->first();
+        if (!$customer) {
+            return redirect()->to('/login')->with('error', 'Data pelanggan tidak ditemukan');
+        }
+        
+        // Get customer invoices
+        $invoices = $this->invoiceModel
+            ->where('customer_id', $customer['id'])
+            ->orderBy('due_date', 'DESC')
+            ->findAll();
+        
+        return view('portal/invoices', [
+            'customer' => $customer,
+            'invoices' => $invoices
+        ]);
+    }
 
     /**
      * Syarat & Ketentuan Page

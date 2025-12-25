@@ -19,6 +19,7 @@ class CustomerModel extends Model
         'lat',
         'lng',
         'status',
+        'portal_password',
         'created_at',
         'updated_at',
     ];
@@ -26,4 +27,3 @@ class CustomerModel extends Model
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 }
-?>

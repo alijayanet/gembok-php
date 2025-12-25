@@ -93,7 +93,12 @@ $routes->group('admin', ['filter' => 'admin'], function($routes) {
     $routes->get('setting', 'AdminSettings::index');
     $routes->get('settings', 'AdminSettings::index');
     $routes->post('settings/save', 'AdminSettings::save');
+    $routes->post('settings/profile', 'AdminSettings::updateProfile');
+    $routes->post('settings/password', 'AdminSettings::changePassword');
     $routes->post('command', 'Admin::handleCommand');
+    // Telegram webhook management
+    $routes->post('settings/setTelegramWebhook', 'AdminSettings::setTelegramWebhook');
+    $routes->post('settings/deleteTelegramWebhook', 'AdminSettings::deleteTelegramWebhook');
 });
 
 /*
@@ -109,8 +114,12 @@ $routes->get('cron/run/(:segment)', 'Billing::cronHandler/$1');
  * --------------------------------------------------------------------
  */
 $routes->get('portal', 'Portal::index');
+$routes->get('portal/dashboard', 'Portal::index'); // Alias for portal
+$routes->get('portal/logout', 'Portal::logout'); // Add logout route
 $routes->get('portal/tos', 'Portal::tos');
 $routes->get('portal/invoices', 'Portal::invoices');
+$routes->get('portal/payment/(:num)', 'Portal::payment/$1'); // Payment page
+$routes->post('portal/processPayment', 'Portal::processPayment'); // Process payment
 $routes->get('portal/wifi', 'Portal::editWifi');
 $routes->post('portal/wifi', 'Portal::editWifi');
 
@@ -128,11 +137,13 @@ $routes->get('admin/settings/integrations', 'Settings::integrations');
 
 /*
  * --------------------------------------------------------------------
- * Debug Routes (Remove in production!)
+ * Debug Routes (⚠️ REMOVE IN PRODUCTION!)
  * --------------------------------------------------------------------
+ * These routes are for development/debugging only.
+ * IMPORTANT: Comment out or delete these lines before deploying to production!
  */
-$routes->get('debug/genieacs', 'Debug::genieacs');
-$routes->get('diagnostic/pppoeMatch', 'Diagnostic::pppoeMatch');
+// $routes->get('debug/genieacs', 'Debug::genieacs');       // UNCOMMENT FOR DEBUG ONLY
+// $routes->get('diagnostic/pppoeMatch', 'Diagnostic::pppoeMatch'); // UNCOMMENT FOR DEBUG ONLY
 
 /*
  * --------------------------------------------------------------------
@@ -142,6 +153,9 @@ $routes->get('diagnostic/pppoeMatch', 'Diagnostic::pppoeMatch');
 $routes->post('webhook/payment', 'Webhook::payment');
 $routes->post('webhook/whatsapp', 'Webhook::whatsapp');
 $routes->post('webhook/midtrans', 'Webhook::midtrans');
+$routes->post('webhook/telegram', 'Webhook::telegram'); // Telegram Bot Webhook
+$routes->get('webhook/telegram', 'Webhook::telegram');  // GET for testing
+
 
 /*
  * --------------------------------------------------------------------

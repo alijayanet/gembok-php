@@ -9,10 +9,14 @@ class InvoiceModel extends Model
     protected $primaryKey = 'id';
     protected $allowedFields = [
         'customer_id',
+        'invoice_number',
         'amount',
         'description',
         'due_date',
         'paid',
+        'paid_at',
+        'payment_method',
+        'payment_ref',
         'status',
         'created_at',
         'updated_at',

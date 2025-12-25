@@ -1,6 +1,8 @@
 <?php
 namespace App\Services;
 
+use App\Services\ConfigService;
+
 class TripayService
 {
     private $apiKey;
@@ -8,13 +10,16 @@ class TripayService
     private $merchantCode;
     private $mode; // 'sandbox' or 'production'
     private $baseUrl;
+    private ConfigService $config;
 
     public function __construct()
     {
-        $this->apiKey = getenv('TRIPAY_API_KEY');
-        $this->privateKey = getenv('TRIPAY_PRIVATE_KEY');
-        $this->merchantCode = getenv('TRIPAY_MERCHANT_CODE');
-        $this->mode = getenv('TRIPAY_MODE') ?: 'sandbox';
+        $this->config = new ConfigService();
+        
+        $this->apiKey = $this->config->get('TRIPAY_API_KEY');
+        $this->privateKey = $this->config->get('TRIPAY_PRIVATE_KEY');
+        $this->merchantCode = $this->config->get('TRIPAY_MERCHANT_CODE');
+        $this->mode = $this->config->get('TRIPAY_MODE') ?: 'sandbox';
 
         $this->baseUrl = ($this->mode === 'production') 
             ? 'https://tripay.co.id/api/' 

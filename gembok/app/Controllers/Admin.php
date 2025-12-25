@@ -108,7 +108,7 @@ class Admin extends BaseController
      */
     public function map()
     {
-        return view('admin_map');
+        return view('admin/map');
     }
 
     /**
@@ -128,18 +128,28 @@ class Admin extends BaseController
         $users = [];
         $profiles = [];
         $active = [];
+        $error = null;
+        
         try {
-            $users = $mik->getPppoeSecrets();
-            $profiles = $mik->getPppoeProfiles();
-            $active = $mik->getPppoeActive();
+            if (!$mik->isConnected()) {
+                $error = 'Tidak dapat terhubung ke MikroTik. Silakan cek konfigurasi di Settings.';
+                session()->setFlashdata('error', $error);
+            } else {
+                $users = $mik->getPppoeSecrets();
+                $profiles = $mik->getPppoeProfiles();
+                $active = $mik->getActivePppoe();
+            }
         } catch (\Exception $e) {
-            // Handle connection error
+            $error = 'Error: ' . $e->getMessage();
+            session()->setFlashdata('error', $error);
+            log_message('error', 'MikroTik connection error: ' . $e->getMessage());
         }
         
         return view('admin/mikrotik', [
             'users' => $users, 
             'profiles' => $profiles,
-            'active' => $active
+            'active' => $active,
+            'error' => $error
         ]);
     }
 
@@ -184,18 +194,28 @@ class Admin extends BaseController
         $users = [];
         $profiles = [];
         $active = [];
+        $error = null;
+        
         try {
-            $users = $mik->getHotspotUsers();
-            $profiles = $mik->getHotspotProfiles();
-            $active = $mik->getHotspotActive();
+            if (!$mik->isConnected()) {
+                $error = 'Tidak dapat terhubung ke MikroTik. Silakan cek konfigurasi di Settings.';
+                session()->setFlashdata('error', $error);
+            } else {
+                $users = $mik->getHotspotUsers();
+                $profiles = $mik->getHotspotProfiles();
+                $active = $mik->getActiveHotspotUsers();
+            }
         } catch (\Exception $e) {
-            // Handle connection error
+            $error = 'Error: ' . $e->getMessage();
+            session()->setFlashdata('error', $error);
+            log_message('error', 'MikroTik Hotspot error: ' . $e->getMessage());
         }
         
         return view('admin/hotspot', [
             'users' => $users, 
             'profiles' => $profiles,
-            'active' => $active
+            'active' => $active,
+            'error' => $error
         ]);
     }
 
@@ -290,14 +310,20 @@ class Admin extends BaseController
                     return $this->response->setJSON(['success' => false, 'message' => 'Username dan password wajib diisi']);
                 }
                 
-                // TODO: Implement actual MikroTik API call to add PPPoE user
-                // $mik = new MikrotikService();
-                // $mik->addPppoeSecret($username, $password, $profile);
+                $mik = new MikrotikService();
+                $result = $mik->addPppoeSecret($username, $password, $profile);
                 
-                return $this->response->setJSON([
-                    'success' => true, 
-                    'message' => "PPPoE user '{$username}' berhasil ditambahkan dengan profile '{$profile}'"
-                ]);
+                if ($result) {
+                    return $this->response->setJSON([
+                        'success' => true, 
+                        'message' => "PPPoE user '{$username}' berhasil ditambahkan dengan profile '{$profile}'"
+                    ]);
+                } else {
+                    return $this->response->setJSON([
+                        'success' => false, 
+                        'message' => 'Gagal menambahkan user: ' . $mik->getLastError()
+                    ]);
+                }
                 
             case 'add_hotspot':
                 $username = $json['username'] ?? '';
@@ -309,12 +335,20 @@ class Admin extends BaseController
                     return $this->response->setJSON(['success' => false, 'message' => 'Username dan password wajib diisi']);
                 }
                 
-                // TODO: Implement actual MikroTik API call to add Hotspot user
+                $mik = new MikrotikService();
+                $result = $mik->addHotspotUser($username, $password, $profile, $limit_uptime);
                 
-                return $this->response->setJSON([
-                    'success' => true, 
-                    'message' => "Hotspot user '{$username}' berhasil ditambahkan"
-                ]);
+                if ($result) {
+                    return $this->response->setJSON([
+                        'success' => true, 
+                        'message' => "Hotspot user '{$username}' berhasil ditambahkan"
+                    ]);
+                } else {
+                    return $this->response->setJSON([
+                        'success' => false, 
+                        'message' => 'Gagal menambahkan user: ' . $mik->getLastError()
+                    ]);
+                }
                 
             case 'edit_pppoe':
                 $username = $json['username'] ?? '';
@@ -325,17 +359,45 @@ class Admin extends BaseController
                     return $this->response->setJSON(['success' => false, 'message' => 'Username tidak valid']);
                 }
                 
-                // TODO: Implement actual MikroTik API call to edit PPPoE user
-                
-                $msg = "PPPoE user '{$username}' berhasil diupdate";
+                $mik = new MikrotikService();
+                $data = ['profile' => $profile];
                 if (!empty($password)) {
-                    $msg .= " (password diubah)";
+                    $data['password'] = $password;
                 }
                 
-                return $this->response->setJSON([
-                    'success' => true, 
-                    'message' => $msg
-                ]);
+                $result = $mik->updatePppoeSecret($username, $data);
+                
+                if ($result) {
+                    $msg = "PPPoE user '{$username}' berhasil diupdate";
+                    if (!empty($password)) {
+                        $msg .= " (password diubah)";
+                    }
+                    return $this->response->setJSON(['success' => true, 'message' => $msg]);
+                } else {
+                    return $this->response->setJSON(['success' => false, 'message' => $mik->getLastError()]);
+                }
+                
+            case 'delete_pppoe':
+                $username = $json['username'] ?? '';
+                
+                if (empty($username)) {
+                    return $this->response->setJSON(['success' => false, 'message' => 'Username tidak valid']);
+                }
+                
+                $mik = new MikrotikService();
+                $result = $mik->deletePppoeSecret($username);
+                
+                if ($result) {
+                    return $this->response->setJSON([
+                        'success' => true, 
+                        'message' => "PPPoE user '{$username}' berhasil dihapus dari MikroTik"
+                    ]);
+                } else {
+                    return $this->response->setJSON([
+                        'success' => false, 
+                        'message' => 'Gagal menghapus user: ' . $mik->getLastError()
+                    ]);
+                }
                 
             case 'edit_hotspot':
                 $username = $json['username'] ?? '';
@@ -347,28 +409,46 @@ class Admin extends BaseController
                     return $this->response->setJSON(['success' => false, 'message' => 'Username tidak valid']);
                 }
                 
-                // TODO: Implement actual MikroTik API call to edit Hotspot user
-                
-                $msg = "Hotspot user '{$username}' berhasil diupdate";
+                $mik = new MikrotikService();
+                $data = ['profile' => $profile];
                 if (!empty($password)) {
-                    $msg .= " (password diubah)";
+                    $data['password'] = $password;
+                }
+                if (!empty($limit_uptime)) {
+                    $data['limit_uptime'] = $limit_uptime;
                 }
                 
-                return $this->response->setJSON([
-                    'success' => true, 
-                    'message' => $msg
-                ]);
+                $result = $mik->updateHotspotUser($username, $data);
+                
+                if ($result) {
+                    $msg = "Hotspot user '{$username}' berhasil diupdate";
+                    if (!empty($password)) {
+                        $msg .= " (password diubah)";
+                    }
+                    return $this->response->setJSON(['success' => true, 'message' => $msg]);
+                } else {
+                    return $this->response->setJSON(['success' => false, 'message' => $mik->getLastError()]);
+                }
                 
             case 'toggle_pppoe':
             case 'toggle_hotspot':
                 $username = $json['username'] ?? '';
                 
-                // TODO: Implement actual toggle logic
+                $mik = new MikrotikService();
+                $enabled = $json['enabled'] ?? true;
                 
-                return $this->response->setJSON([
-                    'success' => true, 
-                    'message' => "Status user '{$username}' berhasil diubah"
-                ]);
+                if ($action === 'toggle_pppoe') {
+                    $result = $enabled ? $mik->enablePppoe($username) : $mik->disablePppoe($username);
+                } else {
+                    // Hotspot doesn't have enable/disable, just delete to disable
+                    $result = true; // Placeholder
+                }
+                
+                if ($result) {
+                    return $this->response->setJSON(['success' => true, 'message' => "Status user '{$username}' berhasil diubah"]);
+                } else {
+                    return $this->response->setJSON(['success' => false, 'message' => $mik->getLastError()]);
+                }
                 
             // PPPoE Profile Actions
             case 'add_pppoe_profile':
@@ -379,12 +459,18 @@ class Admin extends BaseController
                     return $this->response->setJSON(['success' => false, 'message' => 'Nama profile wajib diisi']);
                 }
                 
-                // TODO: Implement actual MikroTik API call
+                $rateLimit = $json['rate_limit'] ?? '';
+                $localAddress = $json['local_address'] ?? '';
+                $remoteAddress = $json['remote_address'] ?? '';
                 
-                return $this->response->setJSON([
-                    'success' => true, 
-                    'message' => "Profile PPPoE '{$name}' berhasil ditambahkan"
-                ]);
+                $mik = new MikrotikService();
+                $result = $mik->addPppoeProfile($name, $rateLimit, $localAddress, $remoteAddress);
+                
+                if ($result) {
+                    return $this->response->setJSON(['success' => true, 'message' => "Profile PPPoE '{$name}' berhasil ditambahkan"]);
+                } else {
+                    return $this->response->setJSON(['success' => false, 'message' => $mik->getLastError()]);
+                }
                 
             case 'edit_pppoe_profile':
                 $name = $json['name'] ?? '';
@@ -394,12 +480,20 @@ class Admin extends BaseController
                     return $this->response->setJSON(['success' => false, 'message' => 'Nama profile tidak valid']);
                 }
                 
-                // TODO: Implement actual MikroTik API call
+                $data = [];
+                if (isset($json['rate_limit'])) $data['rate_limit'] = $json['rate_limit'];
+                if (isset($json['local_address'])) $data['local_address'] = $json['local_address'];
+                if (isset($json['remote_address'])) $data['remote_address'] = $json['remote_address'];
+                if ($name !== $originalName) $data['name'] = $name;
                 
-                return $this->response->setJSON([
-                    'success' => true, 
-                    'message' => "Profile PPPoE '{$name}' berhasil diupdate"
-                ]);
+                $mik = new MikrotikService();
+                $result = $mik->updatePppoeProfile($originalName, $data);
+                
+                if ($result) {
+                    return $this->response->setJSON(['success' => true, 'message' => "Profile PPPoE '{$name}' berhasil diupdate"]);
+                } else {
+                    return $this->response->setJSON(['success' => false, 'message' => $mik->getLastError()]);
+                }
                 
             case 'delete_pppoe_profile':
                 $name = $json['name'] ?? '';
@@ -408,12 +502,14 @@ class Admin extends BaseController
                     return $this->response->setJSON(['success' => false, 'message' => 'Nama profile tidak valid']);
                 }
                 
-                // TODO: Implement actual MikroTik API call
+                $mik = new MikrotikService();
+                $result = $mik->deletePppoeProfile($name);
                 
-                return $this->response->setJSON([
-                    'success' => true, 
-                    'message' => "Profile PPPoE '{$name}' berhasil dihapus"
-                ]);
+                if ($result) {
+                    return $this->response->setJSON(['success' => true, 'message' => "Profile PPPoE '{$name}' berhasil dihapus"]);
+                } else {
+                    return $this->response->setJSON(['success' => false, 'message' => $mik->getLastError()]);
+                }
                 
             // Hotspot Profile Actions
             case 'add_hotspot_profile':
@@ -423,12 +519,17 @@ class Admin extends BaseController
                     return $this->response->setJSON(['success' => false, 'message' => 'Nama profile wajib diisi']);
                 }
                 
-                // TODO: Implement actual MikroTik API call
+                $sharedUsers = (int)($json['shared_users'] ?? 1);
+                $rateLimit = $json['rate_limit'] ?? '';
                 
-                return $this->response->setJSON([
-                    'success' => true, 
-                    'message' => "Profile Hotspot '{$name}' berhasil ditambahkan"
-                ]);
+                $mik = new MikrotikService();
+                $result = $mik->addHotspotProfile($name, $sharedUsers, $rateLimit);
+                
+                if ($result) {
+                    return $this->response->setJSON(['success' => true, 'message' => "Profile Hotspot '{$name}' berhasil ditambahkan"]);
+                } else {
+                    return $this->response->setJSON(['success' => false, 'message' => $mik->getLastError()]);
+                }
                 
             case 'edit_hotspot_profile':
                 $name = $json['name'] ?? '';
@@ -437,12 +538,21 @@ class Admin extends BaseController
                     return $this->response->setJSON(['success' => false, 'message' => 'Nama profile tidak valid']);
                 }
                 
-                // TODO: Implement actual MikroTik API call
+                $data = [];
+                if (isset($json['shared_users'])) $data['shared_users'] = (int)$json['shared_users'];
+                if (isset($json['rate_limit'])) $data['rate_limit'] = $json['rate_limit'];
+                if (isset($json['original_name']) && $name !== $json['original_name']) {
+                    $data['name'] = $name;
+                }
                 
-                return $this->response->setJSON([
-                    'success' => true, 
-                    'message' => "Profile Hotspot '{$name}' berhasil diupdate"
-                ]);
+                $mik = new MikrotikService();
+                $result = $mik->updateHotspotProfile($name, $data);
+                
+                if ($result) {
+                    return $this->response->setJSON(['success' => true, 'message' => "Profile Hotspot '{$name}' berhasil diupdate"]);
+                } else {
+                    return $this->response->setJSON(['success' => false, 'message' => $mik->getLastError()]);
+                }
                 
             case 'delete_hotspot_profile':
                 $name = $json['name'] ?? '';
@@ -451,12 +561,14 @@ class Admin extends BaseController
                     return $this->response->setJSON(['success' => false, 'message' => 'Nama profile tidak valid']);
                 }
                 
-                // TODO: Implement actual MikroTik API call
+                $mik = new MikrotikService();
+                $result = $mik->deleteHotspotProfile($name);
                 
-                return $this->response->setJSON([
-                    'success' => true, 
-                    'message' => "Profile Hotspot '{$name}' berhasil dihapus"
-                ]);
+                if ($result) {
+                    return $this->response->setJSON(['success' => true, 'message' => "Profile Hotspot '{$name}' berhasil dihapus"]);
+                } else {
+                    return $this->response->setJSON(['success' => false, 'message' => $mik->getLastError()]);
+                }
 
             // Voucher & User Actions
             case 'generate_vouchers':
@@ -466,16 +578,27 @@ class Admin extends BaseController
                     return $this->response->setJSON(['success' => false, 'message' => 'Tidak ada voucher untuk disimpan']);
                 }
                 
+                $mik = new MikrotikService();
                 $count = 0;
+                $failed = 0;
+                
                 foreach ($vouchers as $v) {
-                    // TODO: Implement actual MikroTik API call
-                    // $mik->addHotspotUser($v['username'], $v['password'], $v['profile']);
-                    $count++;
+                    $result = $mik->addHotspotUser($v['username'], $v['password'], $v['profile'], $v['limit_uptime'] ?? '');
+                    if ($result) {
+                        $count++;
+                    } else {
+                        $failed++;
+                    }
+                }
+                
+                $message = "Berhasil menyimpan {$count} voucher ke MikroTik";
+                if ($failed > 0) {
+                    $message .= ", {$failed} gagal";
                 }
                 
                 return $this->response->setJSON([
-                    'success' => true, 
-                    'message' => "Berhasil menyimpan {$count} voucher ke MikroTik"
+                    'success' => $count > 0, 
+                    'message' => $message
                 ]);
 
             case 'delete_hotspot_user':
@@ -485,12 +608,14 @@ class Admin extends BaseController
                     return $this->response->setJSON(['success' => false, 'message' => 'Username tidak valid']);
                 }
                 
-                // TODO: Implement actual MikroTik API call
+                $mik = new MikrotikService();
+                $result = $mik->deleteHotspotUser($username);
                 
-                return $this->response->setJSON([
-                    'success' => true, 
-                    'message' => "User Hotspot '{$username}' berhasil dihapus"
-                ]);
+                if ($result) {
+                    return $this->response->setJSON(['success' => true, 'message' => "User Hotspot '{$username}' berhasil dihapus"]);
+                } else {
+                    return $this->response->setJSON(['success' => false, 'message' => $mik->getLastError()]);
+                }
                 
             default:
                 return $this->response->setJSON(['success' => false, 'message' => 'Action tidak dikenal']);

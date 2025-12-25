@@ -1,29 +1,33 @@
 <?php
 namespace App\Services;
 
+use App\Services\ConfigService;
+
 /**
  * WhatsappGatewayService
  * -------------------------------------------------
  * Unified wrapper for several popular WhatsApp gateway APIs
  * (Fonnte, MPWA, Wablas, etc.).
  *
- * The gateway to use is defined by the environment variable
+ * The gateway to use is defined by the configuration
  * `WHATSAPP_GATEWAY`. Supported values:
  *   - fonnte
  *   - mpwa
  *   - wablas
  *
  * Each provider requires its own token / key which must be set
- * in the .env file (see the generated .env example).
+ * in the settings (via admin panel or database).
  */
 class WhatsappGatewayService
 {
     /** @var string selected gateway */
     private string $gateway;
+    private ConfigService $config;
 
     public function __construct()
     {
-        $this->gateway = strtolower(getenv('WHATSAPP_GATEWAY') ?: 'fonnte');
+        $this->config = new ConfigService();
+        $this->gateway = strtolower($this->config->get('WHATSAPP_GATEWAY') ?: 'fonnte');
     }
 
     /**
@@ -51,8 +55,8 @@ class WhatsappGatewayService
      */
     private function sendViaFonnte(string $to, string $text): array
     {
-        $url   = getenv('FONNTE_API_URL') ?: 'https://api.fonnte.com/send';
-        $token = getenv('FONNTE_TOKEN');
+        $url   = $this->config->get('FONNTE_API_URL') ?: 'https://api.fonnte.com/send';
+        $token = $this->config->get('FONNTE_TOKEN');
         $payload = [
             'target' => $to,
             'message' => $text,
@@ -65,8 +69,8 @@ class WhatsappGatewayService
      */
     private function sendViaMpwa(string $to, string $text): array
     {
-        $url   = getenv('MPWA_API_URL') ?: 'https://gateway.mpwa.id/api/v1/message/text';
-        $token = getenv('MPWA_TOKEN');
+        $url   = $this->config->get('MPWA_API_URL') ?: 'https://gateway.mpwa.id/api/v1/message/text';
+        $token = $this->config->get('MPWA_TOKEN');
         $payload = [
             'to'      => $to,
             'message' => $text,
@@ -79,8 +83,8 @@ class WhatsappGatewayService
      */
     private function sendViaWablas(string $to, string $text): array
     {
-        $url   = getenv('WABLAS_API_URL') ?: 'https://console.wablas.com/api/v2/sendMessage';
-        $token = getenv('WABLAS_TOKEN');
+        $url   = $this->config->get('WABLAS_API_URL') ?: 'https://console.wablas.com/api/v2/sendMessage';
+        $token = $this->config->get('WABLAS_TOKEN');
         $payload = [
             'phone'   => $to,
             'message' => $text,
