@@ -538,9 +538,9 @@ if (mappingForm) {
             const result = await res.json();
             if (result.success) {
                 resultEl.innerHTML = '<p style="color: var(--neon-green);">✅ Lokasi ONU berhasil disimpan!</p>';
-                // Close modal after 1.5 seconds
+                // Reload page after 1.5 seconds to update button status
                 setTimeout(() => {
-                    closeMapModal();
+                    location.reload();
                 }, 1500);
             } else {
                 resultEl.innerHTML = `<p style="color: var(--neon-orange);">❌ ${result.message || 'Gagal menyimpan'}</p>`;
