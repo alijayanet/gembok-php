@@ -15,15 +15,38 @@ class Api extends BaseController
         
         try {
             // Select serial_number as serial for frontend compatibility
-            $locations = $db->table('onu_locations')
+            $rawLocations = $db->table('onu_locations')
                             ->select('id, name, serial_number as serial, lat, lng')
                             ->get()
                             ->getResultArray();
+            
+            // CRITICAL: Manually convert each field to correct type
+            // This ensures JavaScript receives actual numbers, not strings
+            $locations = [];
+            foreach ($rawLocations as $loc) {
+                $locations[] = [
+                    'id' => (int)$loc['id'],
+                    'name' => (string)$loc['name'],
+                    'serial' => (string)$loc['serial'],
+                    'lat' => (double)$loc['lat'],    // Use double for precision
+                    'lng' => (double)$loc['lng']     // Use double for precision
+                ];
+            }
+            
+            // Log for debugging
+            log_message('info', 'API onuLocations: Returning ' . count($locations) . ' locations');
+            
         } catch (\Exception $e) {
+            log_message('error', 'API onuLocations error: ' . $e->getMessage());
             $locations = [];
         }
         
-        return $this->response->setJSON($locations);
+        // Use json_encode directly with flags
+        $json = json_encode($locations, JSON_NUMERIC_CHECK | JSON_PRESERVE_ZERO_FRACTION);
+        
+        return $this->response
+                    ->setContentType('application/json')
+                    ->setBody($json);
     }
 
     /**
@@ -86,6 +109,47 @@ class Api extends BaseController
     }
     
     /**
+     * Delete ONU location
+     */
+    public function deleteOnu()
+    {
+        $json = $this->request->getJSON(true);
+        $serial = $json['serial'] ?? '';
+        
+        if (empty($serial)) {
+            return $this->response->setJSON([
+                'success' => false, 
+                'message' => 'Serial number wajib diisi'
+            ]);
+        }
+        
+        $db = \Config\Database::connect();
+        
+        try {
+            $deleted = $db->table('onu_locations')
+                         ->where('serial_number', $serial)
+                         ->delete();
+            
+            if ($deleted) {
+                return $this->response->setJSON([
+                    'success' => true, 
+                    'message' => 'Lokasi ONU berhasil dihapus'
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => false, 
+                    'message' => 'ONU tidak ditemukan'
+                ]);
+            }
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false, 
+                'message' => 'Database error: ' . $e->getMessage()
+            ]);
+        }
+    }
+    
+    /**
      * Update ONU WiFi settings via GenieACS
      */
     public function updateWifi()
@@ -96,14 +160,24 @@ class Api extends BaseController
         $ssid = $json['ssid'] ?? '';
         $password = $json['password'] ?? '';
         
-        if (empty($serial) || empty($ssid) || empty($password)) {
+        // Serial wajib, tapi SSID atau Password boleh salah satu
+        if (empty($serial)) {
             return $this->response->setJSON([
                 'success' => false, 
-                'message' => 'Serial, SSID dan Password wajib diisi'
+                'message' => 'Serial number wajib diisi'
             ]);
         }
         
-        if (strlen($password) < 8) {
+        // Minimal salah satu harus diisi (SSID atau Password)
+        if (empty($ssid) && empty($password)) {
+            return $this->response->setJSON([
+                'success' => false, 
+                'message' => 'SSID atau Password harus diisi (minimal salah satu)'
+            ]);
+        }
+        
+        // Validasi password jika diisi
+        if (!empty($password) && strlen($password) < 8) {
             return $this->response->setJSON([
                 'success' => false, 
                 'message' => 'Password minimal 8 karakter'
@@ -112,20 +186,50 @@ class Api extends BaseController
         
         try {
             $genie = new GenieacsService();
+            
+            // Log request
+            log_message('info', "API updateWifi: serial={$serial}, ssid={$ssid}, password=" . (empty($password) ? 'empty' : 'set'));
+            
             $result = $genie->setWifi($serial, $ssid, $password);
             
-            if (($result['code'] ?? 0) === 200 || ($result['code'] ?? 0) === 202) {
+            // Log response
+            log_message('info', "GenieACS setWifi response: " . json_encode($result));
+            
+            $code = $result['code'] ?? 0;
+            $error = $result['error'] ?? '';
+            $body = $result['body'] ?? [];
+            
+            if ($code === 200 || $code === 202) {
                 return $this->response->setJSON([
                     'success' => true, 
                     'message' => 'WiFi berhasil diperbarui'
                 ]);
             } else {
+                // More detailed error message
+                $errorMsg = 'Unknown error';
+                
+                if (!empty($error)) {
+                    $errorMsg = $error;
+                } elseif (is_array($body) && isset($body['message'])) {
+                    $errorMsg = $body['message'];
+                } elseif (is_array($body) && isset($body['error'])) {
+                    $errorMsg = $body['error'];
+                } elseif ($code === 404) {
+                    $errorMsg = "Device not found (serial: {$serial})";
+                } elseif ($code === 0) {
+                    $errorMsg = "Cannot connect to GenieACS server";
+                }
+                
+                log_message('error', "GenieACS setWifi failed: code={$code}, error={$errorMsg}");
+                
                 return $this->response->setJSON([
                     'success' => false, 
-                    'message' => 'GenieACS error: ' . ($result['body']['error'] ?? 'Unknown error')
+                    'message' => "GenieACS error: {$errorMsg} (code: {$code})"
                 ]);
             }
         } catch (\Exception $e) {
+            log_message('error', "API updateWifi exception: " . $e->getMessage());
+            
             return $this->response->setJSON([
                 'success' => false, 
                 'message' => 'Error: ' . $e->getMessage()
