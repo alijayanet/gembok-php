@@ -912,11 +912,7 @@
                 <span class="menu-text">Map Monitoring</span>
             </a>
             
-            <a href="<?= base_url('admin/odp') ?>" class="menu-item <?= uri_string() === 'admin/odp' ? 'active' : '' ?>">
-                <i class="fas fa-project-diagram menu-icon"></i>
-                <span class="menu-text">Manajemen ODP</span>
-            </a>
-            
+
             <div class="menu-section">MikroTik</div>
             
             <a href="<?= base_url('admin/mikrotik') ?>" class="menu-item <?= uri_string() === 'admin/mikrotik' ? 'active' : '' ?>">
@@ -967,11 +963,7 @@
                 </a>
             </div>
             
-            <a href="<?= base_url('admin/trouble') ?>" class="menu-item <?= uri_string() === 'admin/trouble' ? 'active' : '' ?>">
-                <i class="fas fa-exclamation-triangle menu-icon"></i>
-                <span class="menu-text">Laporan Gangguan</span>
-            </a>
-            
+
             <div class="menu-section">System</div>
             
             <a href="<?= base_url('admin/setting') ?>" class="menu-item <?= uri_string() === 'admin/setting' || uri_string() === 'admin/settings' ? 'active' : '' ?>">

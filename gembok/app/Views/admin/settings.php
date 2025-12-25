@@ -9,6 +9,62 @@
 <?= $this->section('page_title') ?>Pengaturan Sistem<?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<!-- Admin Profile & Security Section -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+    <!-- Profile Settings -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-user-shield" style="color: var(--neon-green);"></i> Profil Admin</h3>
+        </div>
+        <form action="<?= base_url('admin/settings/profile') ?>" method="post">
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <input type="text" name="username" class="form-control" value="<?= esc($adminUser['username'] ?? '') ?>" required>
+                <small style="color: var(--text-muted)">Username untuk login admin panel</small>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Nama Lengkap</label>
+                <input type="text" name="name" class="form-control" value="<?= esc($adminUser['name'] ?? '') ?>" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email (Opsional)</label>
+                <input type="email" name="email" class="form-control" value="<?= esc($adminUser['email'] ?? '') ?>" placeholder="admin@example.com">
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Simpan Profil
+            </button>
+        </form>
+    </div>
+    
+    <!-- Change Password -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-key" style="color: var(--neon-yellow);"></i> Ganti Password</h3>
+        </div>
+        <form action="<?= base_url('admin/settings/password') ?>" method="post">
+            <div class="form-group">
+                <label class="form-label">Password Saat Ini</label>
+                <input type="password" name="current_password" class="form-control" placeholder="••••••••" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password Baru</label>
+                <input type="password" name="new_password" class="form-control" placeholder="Minimal 6 karakter" required minlength="6">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Konfirmasi Password Baru</label>
+                <input type="password" name="confirm_password" class="form-control" placeholder="Ketik ulang password baru" required>
+            </div>
+            <button type="submit" class="btn btn-warning">
+                <i class="fas fa-key"></i> Ubah Password
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Integration Settings -->
+<h2 style="color: var(--text-primary); margin-bottom: 1rem; font-size: 1.25rem;">
+    <i class="fas fa-plug"></i> Integrasi & API
+</h2>
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
     <!-- WhatsApp Settings -->
     <div class="card">
@@ -150,6 +206,57 @@
         </form>
     </div>
 
+    <!-- Telegram Bot Settings -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fab fa-telegram" style="color: #0088cc;"></i> Telegram Bot</h3>
+        </div>
+        <form action="<?= base_url('admin/settings/save') ?>" method="post">
+            <div class="form-group">
+                <label class="form-label">Bot Token</label>
+                <input type="text" name="TELEGRAM_BOT_TOKEN" class="form-control" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11" value="<?= esc($TELEGRAM_BOT_TOKEN ?? '') ?>">
+                <small style="color: var(--text-muted)">Get from @BotFather in Telegram</small>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Admin Chat IDs</label>
+                <input type="text" name="TELEGRAM_ADMIN_CHAT_IDS" class="form-control" placeholder="123456789,987654321" value="<?= esc($TELEGRAM_ADMIN_CHAT_IDS ?? '') ?>">
+                <small style="color: var(--text-muted)">Comma-separated Chat IDs (get from @userinfobot)</small>
+            </div>
+            <div style="background: rgba(0, 136, 204, 0.1); border-left: 3px solid #0088cc; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem;">
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0;">
+                    <i class="fas fa-info-circle"></i> <strong>Webhook Management:</strong><br>
+                    <?php if (!empty($TELEGRAM_BOT_TOKEN)): ?>
+                        <span style="color: var(--text-secondary);">Webhook URL: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;"><?= esc($webhookUrls['telegram'] ?? '') ?></code></span><br><br>
+                        
+                        <!-- Set Webhook Button -->
+                        <form method="post" action="/admin/settings/setTelegramWebhook" style="display: inline-block; margin-right: 0.5rem;">
+                            <button type="submit" class="btn btn-success btn-sm" style="background: #10b981; border: none; padding: 0.4rem 1rem; font-size: 0.85rem;">
+                                <i class="fas fa-check-circle"></i> Set Webhook
+                            </button>
+                        </form>
+                        
+                        <!-- Delete Webhook Button -->
+                        <form method="post" action="/admin/settings/deleteTelegramWebhook" style="display: inline-block; margin-right: 0.5rem;">
+                            <button type="submit" class="btn btn-danger btn-sm" style="background: #ef4444; border: none; padding: 0.4rem 1rem; font-size: 0.85rem;" onclick="return confirm('Delete Telegram webhook?')">
+                                <i class="fas fa-trash"></i> Delete Webhook
+                            </button>
+                        </form>
+                        
+                        <!-- Copy URL Button -->
+                        <button type="button" class="btn btn-secondary btn-sm" style="background: #6b7280; border: none; padding: 0.4rem 1rem; font-size: 0.85rem;" onclick="copyWebhookUrl('<?= esc($webhookUrls['telegram'] ?? '') ?>')">
+                            <i class="fas fa-copy"></i> Copy URL
+                        </button>
+                    <?php else: ?>
+                        <span style="color: #fbbf24;">⚠️ Please save Bot Token first, then webhook management buttons will appear here.</span>
+                    <?php endif; ?>
+                </p>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Simpan Telegram
+            </button>
+        </form>
+    </div>
+
     <!-- Webhook URLs -->
     <div class="card" style="grid-column: 1 / -1;">
         <div class="card-header">
@@ -159,6 +266,17 @@
             <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size:0.9rem;">
                 <i class="fas fa-info-circle"></i> Copy URL ini dan paste ke gateway/payment provider Anda
             </p>
+            
+            <!-- Add Copy Webhook URL Script -->
+            <script>
+            function copyWebhookUrl(url) {
+                navigator.clipboard.writeText(url).then(function() {
+                    alert('✅ Webhook URL copied to clipboard!');
+                }, function(err) {
+                    alert('❌ Failed to copy: ' + err);
+                });
+            }
+            </script>
             
             <!-- WhatsApp Webhook -->
             <div class="webhook-item">
@@ -217,12 +335,99 @@
                 </div>
             </div>
 
+            <!-- Telegram Webhook -->
+            <div class="webhook-item">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
+                    <div style="width: 40px; height: 40px; background: #0088cc; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fab fa-telegram" style="color: white; font-size: 1.25rem;"></i>
+                    </div>
+                    <div>
+                        <h4 style="margin: 0; color: var(--text-primary); font-size: 0.95rem;">Telegram Bot Webhook</h4>
+                        <p style="margin: 0; color: var(--text-muted); font-size: 0.8rem;">Set via Telegram Bot API</p>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.75rem; align-items: center; background: rgba(255,255,255,0.05); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <code id="webhook-telegram" style="flex: 1; color: var(--neon-cyan); font-size: 0.85rem; word-break: break-all;"><?= esc($webhookUrls['telegram'] ?? '') ?></code>
+                    <button onclick="copyWebhook('webhook-telegram', this)" class="btn btn-sm btn-secondary">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                </div>
+                <div style="display: flex; gap: 0.75rem; margin-top: 0.75rem;">
+                    <form action="<?= base_url('admin/settings/set_telegram_webhook') ?>" method="post" style="flex: 1;">
+                        <button type="submit" class="btn btn-sm btn-success w-100">
+                            <i class="fas fa-check-circle"></i> Set Webhook
+                        </button>
+                    </form>
+                    <form action="<?= base_url('admin/settings/delete_telegram_webhook') ?>" method="post" style="flex: 1;">
+                        <button type="submit" class="btn btn-sm btn-danger w-100">
+                            <i class="fas fa-times-circle"></i> Delete Webhook
+                        </button>
+                    </form>
+                </div>
+            </div>
+
             <div style="background: rgba(52, 152, 219, 0.1); border-left: 3px solid var(--neon-cyan); padding: 1rem; border-radius: 6px; margin-top: 1.5rem;">
                 <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0;">
                     <i class="fas fa-globe"></i> <strong>Base URL:</strong> <?= esc($baseUrl) ?>
                     <br><br>
                     <i class="fas fa-shield-alt"></i> Pastikan webhook endpoint dapat diakses dari internet. Untuk testing local, gunakan tools seperti ngrok.
                 </p>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <!-- Webhook Logs Table -->
+    <div class="card" style="grid-column: 1 / -1;">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-history" style="color: var(--text-primary);"></i> Log Webhook (Terakhir 50)</h3>
+            <button onclick="window.location.reload()" class="btn btn-sm btn-secondary">
+                <i class="fas fa-sync"></i> Refresh
+            </button>
+        </div>
+        <div style="padding: 0;">
+            <div class="table-responsive">
+                <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="padding: 1rem; border-bottom: 1px solid var(--border-color);">Waktu</th>
+                            <th style="padding: 1rem; border-bottom: 1px solid var(--border-color);">Source</th>
+                            <th style="padding: 1rem; border-bottom: 1px solid var(--border-color);">Payload</th>
+                            <th style="padding: 1rem; border-bottom: 1px solid var(--border-color);">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($webhookLogs)): ?>
+                        <tr>
+                            <td colspan="4" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">
+                                <i class="fas fa-info-circle"></i> Belum ada data log webhook yang terekam.
+                            </td>
+                        </tr>
+                        <?php else: ?>
+                            <?php foreach ($webhookLogs as $log): ?>
+                            <tr>
+                                <td style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); white-space: nowrap; font-size: 0.85rem;">
+                                    <?= date('d/m/Y H:i', strtotime($log['created_at'])) ?>
+                                </td>
+                                <td style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color);">
+                                    <span class="badge badge-info"><?= esc($log['source']) ?></span>
+                                </td>
+                                <td style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color);">
+                                    <div style="max-height: 60px; overflow-y: auto; font-family: 'Fira Code', monospace; font-size: 0.7rem; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 4px; color: var(--neon-cyan);">
+                                        <?= esc($log['payload']) ?>
+                                    </div>
+                                </td>
+                                <td style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color);">
+                                    <span class="badge badge-<?= $log['response_code'] == 200 ? 'success' : 'danger' ?>">
+                                        <?= $log['response_code'] ?>
+                                    </span>
+                                    <div style="font-size: 0.7rem; margin-top: 2px; color: var(--text-muted);"><?= esc($log['response_message']) ?></div>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

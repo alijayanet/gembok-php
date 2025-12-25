@@ -2,14 +2,12 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a0f">
     <title>Portal Pelanggan - Gembok</title>
     
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -45,13 +43,11 @@
             align-items: center;
             justify-content: center;
             position: relative;
-            overflow: hidden;
         }
         
-        /* Animated background */
         body::before {
             content: '';
-            position: absolute;
+            position: fixed;
             top: -50%;
             left: -50%;
             width: 200%;
@@ -59,6 +55,7 @@
             background: radial-gradient(circle at 30% 30%, rgba(0, 245, 255, 0.05) 0%, transparent 50%),
                         radial-gradient(circle at 70% 70%, rgba(191, 0, 255, 0.05) 0%, transparent 50%);
             animation: backgroundMove 20s ease-in-out infinite;
+            z-index: -1;
         }
         
         @keyframes backgroundMove {
@@ -98,57 +95,36 @@
             justify-content: center;
             font-size: 2rem;
             font-weight: 700;
-            margin-bottom: 1.5rem;
-            box-shadow: var(--shadow-neon);
+            color: var(--bg-primary);
+            margin-bottom: 1rem;
+            box-shadow: 0 8px 32px rgba(0, 245, 255, 0.3);
         }
         
         .login-title {
-            font-size: 1.75rem;
+            font-size: 1.5rem;
             font-weight: 700;
+            margin-bottom: 0.5rem;
             background: var(--gradient-primary);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 0.5rem;
         }
         
         .login-subtitle {
             color: var(--text-secondary);
-            font-size: 0.9rem;
+            font-size: 0.9375rem;
         }
         
         .form-group {
-            margin-bottom: 1.25rem;
+            margin-bottom: 1.5rem;
         }
         
         .form-label {
             display: block;
             margin-bottom: 0.5rem;
-            font-weight: 500;
-            font-size: 0.875rem;
+            font-weight: 600;
             color: var(--text-secondary);
-        }
-        
-        .form-control {
-            width: 100%;
-            padding: 0.875rem 1rem;
-            padding-left: 2.75rem;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            color: var(--text-primary);
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-        }
-        
-        .form-control:focus {
-            outline: none;
-            border-color: var(--neon-cyan);
-            box-shadow: 0 0 0 4px rgba(0, 245, 255, 0.1);
-        }
-        
-        .form-control::placeholder {
-            color: var(--text-muted);
+            font-size: 0.875rem;
         }
         
         .input-wrapper {
@@ -160,8 +136,45 @@
             left: 1rem;
             top: 50%;
             transform: translateY(-50%);
-            color: var(--text-muted);
+            color: var(--neon-cyan);
+            font-size: 1.125rem;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 1rem;
+            padding-left: 3rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
             font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--neon-cyan);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 0 3px rgba(0, 245, 255, 0.1);
+        }
+        
+        .info-text {
+            background: rgba(0, 245, 255, 0.05);
+            border: 1px solid var(--neon-cyan);
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        
+        .info-text i {
+            color: var(--neon-cyan);
+            margin-top: 0.125rem;
         }
         
         .btn-login {
@@ -172,19 +185,19 @@
             border-radius: 12px;
             color: var(--bg-primary);
             font-size: 1rem;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            margin-top: 1.5rem;
+            box-shadow: 0 8px 24px rgba(0, 245, 255, 0.3);
         }
         
         .btn-login:hover {
-            box-shadow: var(--shadow-neon);
             transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(0, 245, 255, 0.4);
         }
         
         .btn-login:active {
@@ -192,53 +205,34 @@
         }
         
         .alert {
-            padding: 0.875rem 1rem;
-            border-radius: 10px;
-            margin-bottom: 1.25rem;
-            font-size: 0.875rem;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
             display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            align-items: flex-start;
+            gap: 0.75rem;
+            font-size: 0.9375rem;
         }
         
         .alert-error {
-            background: rgba(255, 0, 170, 0.1);
-            border: 1px solid rgba(255, 0, 170, 0.3);
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid var(--neon-pink);
             color: var(--neon-pink);
         }
         
         .alert-success {
             background: rgba(0, 255, 136, 0.1);
-            border: 1px solid rgba(0, 255, 136, 0.3);
+            border: 1px solid var(--neon-green);
             color: var(--neon-green);
         }
         
         .login-footer {
             text-align: center;
-            margin-top: 1.5rem;
-            padding-top: 1.5rem;
+            margin-top: 2rem;
+            padding-top: 2rem;
             border-top: 1px solid var(--border-color);
-        }
-        
-        .login-footer p {
             color: var(--text-muted);
-            font-size: 0.8rem;
-        }
-        
-        .login-footer a {
-            color: var(--neon-cyan);
-            text-decoration: none;
-        }
-        
-        .login-footer a:hover {
-            text-decoration: underline;
-        }
-        
-        .info-text {
-            color: var(--text-muted);
-            font-size: 0.8rem;
-            text-align: center;
-            margin-top: 1rem;
+            font-size: 0.875rem;
         }
     </style>
 </head>
@@ -246,9 +240,11 @@
     <div class="login-container">
         <div class="login-card">
             <div class="login-header">
-                <div class="login-logo">G</div>
+                <div class="login-logo">
+                    <i class="fas fa-lock"></i>
+                </div>
                 <h1 class="login-title">Portal Pelanggan</h1>
-                <p class="login-subtitle">Lihat tagihan, status internet, dan kelola WiFi Anda</p>
+                <p class="login-subtitle">Masuk untuk mengakses dashboard Anda</p>
             </div>
             
             <?php if (isset($error)): ?>
@@ -302,9 +298,75 @@
             
             <div class="login-footer">
                 <p>&copy; <?= date('Y') ?> Gembok ISP Management</p>
-                <p style="margin-top: 0.5rem;"><a href="<?= base_url('/') ?>">← Kembali ke Beranda</a></p>
             </div>
         </div>
     </div>
+    
+    <!-- Theme Toggle Button for Login Page Only -->
+    <div id="theme-toggle" style="position: fixed; top: 1rem; right: 1rem; width: 50px; height: 50px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 9999; backdrop-filter: blur(10px); box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+        <i class="fas fa-moon" id="theme-icon" style="font-size: 1.25rem; color: #fff;"></i>
+    </div>
+    
+    <script>
+        // Theme toggle for login page
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const html = document.documentElement;
+        
+        // Load saved theme
+        const savedTheme = localStorage.getItem('portalTheme') || 'dark';
+        html.setAttribute('data-theme', savedTheme);
+        updateIcon();
+        
+        // Toggle on click
+        themeToggle.addEventListener('click', function() {
+            const current = html.getAttribute('data-theme') || 'dark';
+            const newTheme = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('portalTheme', newTheme);
+            updateIcon();
+        });
+        
+        function updateIcon() {
+            const theme = html.getAttribute('data-theme') || 'dark';
+            themeIcon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+        }
+    </script>
+    
+    <style>
+        /* Light theme for login */
+        [data-theme="light"] {
+            --bg-primary: #f4f6f8;
+            --bg-card: rgba(255, 255, 255, 0.95);
+            --text-primary: #1a1a1a;
+            --text-secondary: rgba(0, 0, 0, 0.7);
+            --text-muted: rgba(0, 0, 0, 0.5);
+            --border-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        [data-theme="light"] body::before {
+            background: radial-gradient(circle at 30% 30%, rgba(8, 145, 178, 0.08) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 70%, rgba(124, 58, 237, 0.08) 0%, transparent 50%);
+        }
+        
+        [data-theme="light"] .login-card {
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        [data-theme="light"] .form-control {
+            background: rgba(0, 0, 0, 0.03);
+            border-color: rgba(0, 0, 0, 0.15);
+        }
+        
+        [data-theme="light"] #theme-toggle {
+            background: rgba(0, 0, 0, 0.05) !important;
+            border-color: rgba(0, 0, 0, 0.15) !important;
+        }
+        
+        [data-theme="light"] #theme-icon {
+            color: #1a1a1a !important;
+        }
+    </style>
 </body>
 </html>

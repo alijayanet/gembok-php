@@ -45,7 +45,6 @@
             align-items: center;
             justify-content: center;
             position: relative;
-            overflow: hidden;
         }
         
         /* Animated background */
@@ -327,5 +326,72 @@
             </div>
         </div>
     </div>
+    
+    <!-- Theme Toggle Button for Admin Login -->
+    <div id="theme-toggle" style="position: fixed; top: 1rem; right: 1rem; width: 50px; height: 50px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 9999; backdrop-filter: blur(10px); box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+        <i class="fas fa-moon" id="theme-icon" style="font-size: 1.25rem; color: #fff;"></i>
+    </div>
+    
+    <script>
+        // Theme toggle for admin login page
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const html = document.documentElement;
+        
+        // Load saved theme (use same localStorage key as portal for consistency)
+        const savedTheme = localStorage.getItem('portalTheme') || 'dark';
+        html.setAttribute('data-theme', savedTheme);
+        updateIcon();
+        
+        // Toggle on click
+        themeToggle.addEventListener('click', function() {
+            const current = html.getAttribute('data-theme') || 'dark';
+            const newTheme = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('portalTheme', newTheme);
+            updateIcon();
+        });
+        
+        function updateIcon() {
+            const theme = html.getAttribute('data-theme') || 'dark';
+            themeIcon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+        }
+    </script>
+    
+    <style>
+        /* Light theme for admin login */
+        [data-theme="light"] {
+            --bg-primary: #f4f6f8;
+            --bg-card: rgba(255, 255, 255, 0.95);
+            --text-primary: #1a1a1a;
+            --text-secondary: rgba(0, 0, 0, 0.7);
+            --text-muted: rgba(0, 0, 0, 0.5);
+            --border-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        [data-theme="light"] body::before {
+            background: radial-gradient(circle at 30% 30%, rgba(8, 145, 178, 0.08) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 70%, rgba(124, 58, 237, 0.08) 0%, transparent 50%);
+        }
+        
+        [data-theme="light"] .login-card {
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        [data-theme="light"] .form-control {
+            background: rgba(0, 0, 0, 0.03);
+            border-color: rgba(0, 0, 0, 0.15);
+        }
+        
+        [data-theme="light"] #theme-toggle {
+            background: rgba(0, 0, 0, 0.05) !important;
+            border-color: rgba(0, 0, 0, 0.15) !important;
+        }
+        
+        [data-theme="light"] #theme-icon {
+            color: #1a1a1a !important;
+        }
+    </style>
 </body>
 </html>

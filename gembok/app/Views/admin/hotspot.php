@@ -110,8 +110,11 @@ $disabledCount = count(array_filter($users ?? [], fn($u) => ($u['disabled'] ?? '
                             <button class="btn btn-secondary btn-sm" onclick="editUser('<?= esc($user['name'] ?? '') ?>')" title="Edit">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="btn btn-secondary btn-sm" onclick="toggleUser('<?= esc($user['name'] ?? '') ?>')" title="Toggle">
+                            <button class="btn btn-secondary btn-sm" onclick="toggleUser('<?= esc($user['name'] ?? '') ?>')" title="<?= ($user['disabled'] ?? 'false') === 'true' ? 'Enable' : 'Disable' ?>">
                                 <i class="fas fa-power-off"></i>
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteUser('<?= esc($user['name'] ?? '') ?>')" title="Hapus">
+                                <i class="fas fa-trash"></i>
                             </button>
                         </div>
                     </td>
@@ -327,6 +330,28 @@ async function toggleUser(username) {
         window.location.reload();
     } catch (err) {
         alert('Error: ' + err.message);
+    }
+}
+
+async function deleteUser(username) {
+    if (!confirm('⚠️ PERINGATAN!\n\nYakin ingin HAPUS hotspot user "' + username + '" dari MikroTik?\n\nAksi ini TIDAK BISA dibatalkan!')) return;
+    
+    try {
+        const res = await fetch('<?= base_url('admin/mikrotik/action') ?>', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete_hotspot_user', username: username })
+        });
+        const result = await res.json();
+        
+        if (result.success) {
+            alert('✅ ' + result.message);
+            window.location.reload();
+        } else {
+            alert('❌ ' + (result.message || 'Gagal menghapus user'));
+        }
+    } catch (err) {
+        alert('❌ Error: ' + err.message);
     }
 }
 

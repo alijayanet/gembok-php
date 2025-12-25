@@ -530,7 +530,7 @@
         </div>
 
         <!-- ONU Status -->
-        <div class="section">
+        <div class="section" id="onu-section">
             <div class="section-title">
                 <i class="fas fa-router"></i>
                 Informasi ONU
@@ -571,13 +571,13 @@
         </div>
 
         <!-- WiFi Settings -->
-        <?php if ($onuData && $onuData['online']): ?>
-            <div class="section">
-                <div class="section-title">
-                    <i class="fas fa-wifi"></i>
-                    Pengaturan WiFi
-                </div>
-                
+        <div class="section" id="wifi-section">
+            <div class="section-title">
+                <i class="fas fa-wifi"></i>
+                Pengaturan WiFi
+            </div>
+            
+            <?php if ($onuData && $onuData['online']): ?>
                 <!-- SSID -->
                 <div class="form-group">
                     <label class="form-label">
@@ -605,11 +605,19 @@
                     <i class="fas fa-save"></i>
                     Simpan Password WiFi
                 </button>
-            </div>
-        <?php endif; ?>
+            <?php else: ?>
+                <div class="alert alert-error" style="margin: 0">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div>
+                        <strong>Perangkat Tidak Terhubung</strong><br>
+                        <span style="font-size: 0.875rem;">ONU Anda sedang offline atau belum terhubung dengan sistem. Silakan hubungi admin jika masalah berlanjut.</span>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </div>
         
         <!-- Account Settings -->
-        <div class="section">
+        <div class="section" id="account-section">
             <div class="section-title">
                 <i class="fas fa-user-cog"></i>
                 Pengaturan Akun Portal
@@ -769,8 +777,10 @@
                 // Re-enable button
                 passBtn.disabled = false;
                 passBtn.innerHTML = '<i class="fas fa-key"></i> Simpan Password Baru';
-            }
+        }
         }
     </script>
+    
+    <?= $this->include('portal/_mobile_nav') ?>
 </body>
 </html>

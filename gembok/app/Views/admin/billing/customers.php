@@ -145,6 +145,26 @@
                 <div class="form-group">
                     <label class="form-label">Username PPPoE</label>
                     <input type="text" name="pppoe_username" class="form-control" required placeholder="Username di MikroTik">
+                    <small style="color: var(--text-muted);"><i class="fas fa-info-circle"></i> Password PPPoE akan sama dengan username</small>
+                </div>
+                
+                <!-- ✅ CHECKBOX CREATE PPPOE -->
+                <div class="form-group">
+                    <div style="display: flex; align-items: start; gap: 10px; padding: 10px; background: rgba(0, 245, 255, 0.05); border: 1px solid var(--border-color); border-radius: 8px;">
+                        <input type="checkbox" 
+                               name="create_pppoe" 
+                               id="create_pppoe" 
+                               value="1" 
+                               checked 
+                               style="width: 18px; height: 18px; margin-top: 2px; cursor: pointer;">
+                        <label for="create_pppoe" style="margin: 0; cursor: pointer; flex: 1;">
+                            <strong style="color: var(--neon-cyan);"><i class="fas fa-network-wired"></i> Create PPPoE User di MikroTik</strong>
+                            <br>
+                            <small style="color: var(--text-muted);">
+                                Uncheck jika PPPoE user sudah ada di MikroTik (untuk import data existing)
+                            </small>
+                        </label>
+                    </div>
                 </div>
                 
                 <div class="form-group">
