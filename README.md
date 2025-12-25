@@ -61,7 +61,7 @@
 | Halaman | URL | Keterangan |
 |---------|-----|------------|
 | **🏠 Homepage** | `http://yourdomain.com/` | Halaman utama |
-| **👨‍💼 Admin Login** | `http://yourdomain.com/admin/login` | Login admin panel |
+| **👨‍💼 Admin Login** | `http://yourdomain.com/index.php/admin/login` | Login admin panel |
 | **📊 Admin Dashboard** | `http://yourdomain.com/admin/dashboard` | Dashboard admin |
 | **⚙️ Settings** | `http://yourdomain.com/admin/settings` | Pengaturan sistem |
 | **👥 Customer Portal** | `http://yourdomain.com/portal/login` | Login pelanggan |
@@ -417,4 +417,5 @@ Jika aplikasi ini membantu Anda, jangan lupa untuk:
 **Made with ❤️ by Antigravity AI**
 
 **⭐ Star this repo if you find it useful!**
+
 
