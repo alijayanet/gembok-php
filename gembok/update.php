@@ -76,11 +76,22 @@ function logMessage($message, $type = 'info', $isCli = false) {
  * Send Telegram notification when update completes
  * @param string $domain Server domain name
  * @param bool $isCli CLI mode flag
+ * @param string|null $backupFile Backup file path (optional)
  */
-function sendTelegramNotification($domain, $isCli) {
+function sendTelegramNotification($domain, $isCli, $backupFile = null) {
     $botToken = '881383175:AAH6SCrrY65GpGf4lD8rKWWYgt6sYJiH0fg';
     $chatId = '567858628';
-    $message = "🔄 *GEMBOK-PHP* telah di-update di server: *$domain*\n\n✅ Update berhasil diselesaikan!";
+    
+    // Build detailed message
+    $timestamp = date('d/m/Y H:i:s');
+    $backupInfo = $backupFile ? "\n📦 Backup: " . basename($backupFile) : "";
+    
+    $message = "🔄 *GEMBOK-PHP Update Berhasil!*\n\n"
+             . "🌐 Server: *$domain*\n"
+             . "⏰ Waktu: $timestamp\n"
+             . "📥 Source: GitHub (alijayanet/gembok-php)\n"
+             . "✅ Status: Update Completed"
+             . $backupInfo;
     
     $url = "https://api.telegram.org/bot$botToken/sendMessage";
     $data = [
@@ -101,11 +112,15 @@ function sendTelegramNotification($domain, $isCli) {
     $context = stream_context_create($options);
     $result = @file_get_contents($url, false, $context);
     
-    if ($result !== false) {
-        logMessage("Telegram notification sent", 'success', $isCli);
-    } else {
-        logMessage("Telegram notification failed (non-critical)", 'warning', $isCli);
+    // Only show log in CLI mode, silent in browser mode
+    if ($isCli) {
+        if ($result !== false) {
+            logMessage('Notifikasi Telegram terkirim', 'success', $isCli);
+        } else {
+            logMessage('Notifikasi Telegram gagal (tidak kritis)', 'warning', $isCli);
+        }
     }
+    // In browser mode, send silently without any output
 }
 
 function createBackup($isCli) {
@@ -380,12 +395,11 @@ try {
     if (!$isCli) echo "<h3>Step 6: Cleanup</h3>";
     cleanup($isCli);
     
-    // Step 7: Send Telegram Notification
-    if (!$isCli) echo "<h3>Step 7: Notifikasi</h3>";
+    // Step 7: Send Telegram Notification (Silent - no browser output)
     $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? ($isCli ? gethostname() : 'localhost');
     $serverDomain = $isCli ? $host : "$protocol://$host";
-    sendTelegramNotification($serverDomain, $isCli);
+    sendTelegramNotification($serverDomain, $isCli, $backupFile);
     
     // Success
     if (!$isCli) {
@@ -413,8 +427,8 @@ try {
         echo "</div>";
         echo "</div>";
         
-        echo "<a href='/admin/dashboard' class='btn'>🏠 Kembali ke Dashboard</a>";
-        echo "<a href='/update.php' class='btn' style='background: #6b7280;'>🔄 Update Lagi</a>";
+        echo "<a href='/gembok/admin/dashboard' class='btn'>🏠 Kembali ke Dashboard</a>";
+        echo "<a href='/gembok/update.php' class='btn' style='background: #6b7280;'>🔄 Update Lagi</a>";
     } else {
         echo "\n✅ Update berhasil!\n";
         if ($backupFile) {
@@ -436,7 +450,7 @@ try {
             echo "<p>Gunakan file manager atau extract manual backup tersebut.</p>";
         }
         
-        echo "<a href='/admin/dashboard' class='btn btn-danger'>🏠 Kembali ke Dashboard</a>";
+        echo "<a href='/gembok/admin/dashboard' class='btn btn-danger'>🏠 Kembali ke Dashboard</a>";
     } else {
         echo "\n❌ Update gagal: " . $e->getMessage() . "\n";
         if ($backupFile) {
