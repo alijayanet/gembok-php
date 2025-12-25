@@ -67,7 +67,7 @@ class Api extends BaseController
     }
     
     /**
-     * Add new ONU location
+     * Add or Update ONU location (Upsert)
      */
     public function addOnu()
     {
@@ -88,18 +88,42 @@ class Api extends BaseController
         $db = \Config\Database::connect();
         
         try {
-            $db->table('onu_locations')->insert([
-                'name' => $name,
-                'serial_number' => $serial, // Fix: mapping to serial_number
-                'lat' => $lat,
-                'lng' => $lng,
-                'created_at' => date('Y-m-d H:i:s')
-            ]);
+            // Check if ONU already exists
+            $existing = $db->table('onu_locations')
+                          ->where('serial_number', $serial)
+                          ->get()
+                          ->getRowArray();
             
-            return $this->response->setJSON([
-                'success' => true, 
-                'message' => 'ONU berhasil ditambahkan'
-            ]);
+            if ($existing) {
+                // Update existing record
+                $db->table('onu_locations')
+                   ->where('serial_number', $serial)
+                   ->update([
+                       'name' => $name,
+                       'lat' => $lat,
+                       'lng' => $lng,
+                       'updated_at' => date('Y-m-d H:i:s')
+                   ]);
+                
+                return $this->response->setJSON([
+                    'success' => true, 
+                    'message' => 'Lokasi ONU berhasil diperbarui'
+                ]);
+            } else {
+                // Insert new record
+                $db->table('onu_locations')->insert([
+                    'name' => $name,
+                    'serial_number' => $serial,
+                    'lat' => $lat,
+                    'lng' => $lng,
+                    'created_at' => date('Y-m-d H:i:s')
+                ]);
+                
+                return $this->response->setJSON([
+                    'success' => true, 
+                    'message' => 'Lokasi ONU berhasil ditambahkan'
+                ]);
+            }
         } catch (\Exception $e) {
             return $this->response->setJSON([
                 'success' => false, 
