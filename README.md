@@ -64,7 +64,7 @@
 | **👨‍💼 Admin Login** | `http://yourdomain.com/index.php/admin/login` | Login admin panel |
 | **📊 Admin Dashboard** | `http://yourdomain.com/admin/dashboard` | Dashboard admin |
 | **⚙️ Settings** | `http://yourdomain.com/admin/settings` | Pengaturan sistem |
-| **👥 Customer Portal** | `http://yourdomain.com/portal/login` | Login pelanggan |
+| **👥 Customer Portal** | `http://yourdomain.com/login` | Login pelanggan |
 | **🔧 Installer** | `http://yourdomain.com/gembok/install.php` | Setup database |
 | **🔄 Auto-Update** | `http://yourdomain.com/gembok/update.php` | Update dari GitHub |
 
@@ -417,5 +417,6 @@ Jika aplikasi ini membantu Anda, jangan lupa untuk:
 **Made with ❤️ by Antigravity AI**
 
 **⭐ Star this repo if you find it useful!**
+
 
 
