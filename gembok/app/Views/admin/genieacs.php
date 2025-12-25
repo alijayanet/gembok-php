@@ -10,6 +10,22 @@
 
 <?= $this->section('content') ?>
 <?php
+    // Load ONU locations from database
+    $db = \Config\Database::connect();
+    $onuLocations = [];
+    try {
+        $locations = $db->table('onu_locations')
+                       ->select('serial_number')
+                       ->get()
+                       ->getResultArray();
+        foreach ($locations as $loc) {
+            $onuLocations[$loc['serial_number']] = true;
+        }
+    } catch (\Exception $e) {
+        // Table might not exist yet
+        $onuLocations = [];
+    }
+    
     $totalDevices = count($devices ?? []);
     $onlineCount = 0;
     $offlineCount = 0;
@@ -188,8 +204,16 @@
                             <button class="btn btn-secondary btn-sm" data-action="edit-ssid" data-serial="<?= esc($serial) ?>" title="Edit SSID & Password WiFi">
                                 <i class="fas fa-wifi"></i>
                             </button>
-                            <button class="btn btn-primary btn-sm" data-action="open-map" data-serial="<?= esc($serial) ?>" data-pppoe="<?= esc($pppoeUser) ?>" title="Set Lokasi / Mapping Koordinat">
-                                <i class="fas fa-map-marker-alt"></i> Map
+                            <?php 
+                            // Check if ONU has coordinates
+                            $hasCoordinates = isset($onuLocations[$serial]);
+                            $mapBtnClass = $hasCoordinates ? 'btn-success' : 'btn-primary';
+                            $mapBtnIcon = $hasCoordinates ? 'fa-map-marked-alt' : 'fa-map-marker-alt';
+                            $mapBtnTitle = $hasCoordinates ? 'Edit Lokasi (Sudah Ada Koordinat)' : 'Set Lokasi / Mapping Koordinat';
+                            ?>
+                            <button class="btn <?= $mapBtnClass ?> btn-sm" data-action="open-map" data-serial="<?= esc($serial) ?>" data-pppoe="<?= esc($pppoeUser) ?>" title="<?= $mapBtnTitle ?>">
+                                <i class="fas <?= $mapBtnIcon ?>"></i> 
+                                <?= $hasCoordinates ? '<i class="fas fa-check" style="font-size: 0.7rem; margin-left: 2px;"></i>' : 'Map' ?>
                             </button>
                             <button class="btn btn-secondary btn-sm" data-action="reboot" data-serial="<?= esc($serial) ?>" title="Restart Device">
                                 <i class="fas fa-sync-alt"></i>

@@ -231,6 +231,81 @@
         let currentLayer = 'osm';
         osmLayer.addTo(map);
         
+        // Custom marker icon
+        const onuIcon = L.divIcon({
+            className: 'onu-marker',
+            iconSize: [16, 16]
+        });
+        
+        let markers = [];
+        let onuData = [];
+        
+        // DEFINE loadMarkers FIRST before using it
+        window.loadMarkers = function() {
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
+            
+            console.log('🔄 Loading ONU locations from API...');
+            
+            fetch('<?= base_url('api/onuLocations') ?>')
+                .then(r => r.json())
+                .then(data => {
+                    console.log('✅ Received ONU data:', data);
+                    console.log('📊 Total ONU:', data.length);
+                    
+                    onuData = data;
+                    document.getElementById('totalMarkers').textContent = data.length;
+                    document.getElementById('onlineDevices').textContent = data.length;
+                    document.getElementById('offlineDevices').textContent = 0;
+                    
+                    // Update list
+                    updateOnuList(data);
+                    
+                    data.forEach((loc, index) => {
+                        console.log(`📍 ONU #${index + 1}:`, {
+                            name: loc.name,
+                            serial: loc.serial,
+                            lat: loc.lat,
+                            lng: loc.lng,
+                            latType: typeof loc.lat,
+                            lngType: typeof loc.lng
+                        });
+                        
+                        // Force convert to number (in case API returns string)
+                        const lat = parseFloat(loc.lat);
+                        const lng = parseFloat(loc.lng);
+                        
+                        console.log(`   → Converted: lat=${lat} (${typeof lat}), lng=${lng} (${typeof lng})`);
+                        
+                        if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+                            try {
+                                const marker = L.marker([lat, lng], { icon: onuIcon }).addTo(map);
+                                marker.bindPopup(createPopupContent(loc));
+                                marker.on('popupopen', () => loadPopupDetails(loc.serial, loc.name));
+                                markers.push(marker);
+                                console.log(`   ✅ Marker added for ${loc.name || loc.serial} at [${lat}, ${lng}]`);
+                            } catch (err) {
+                                console.error(`   ❌ Failed to add marker for ${loc.name}:`, err);
+                            }
+                        } else {
+                            console.warn(`   ⚠️ Skipping ONU ${loc.name || loc.serial} - invalid coordinates (lat=${lat}, lng=${lng})`);
+                        }
+                    });
+                    
+                    console.log(`✅ Total markers added: ${markers.length}`);
+                    
+                    // Auto-fit map to show all markers
+                    if (markers.length > 0) {
+                        const group = L.featureGroup(markers);
+                        map.fitBounds(group.getBounds().pad(0.1));
+                    }
+                })
+                .catch(err => {
+                    console.error('❌ Error loading ONU:', err);
+                    alert('Error loading ONU locations: ' + err.message);
+                });
+        };
+        
         // Hide loading overlay when map is ready
         map.whenReady(() => {
             document.getElementById('mapLoading').style.display = 'none';
@@ -263,43 +338,6 @@
                 currentLayer = 'osm';
             }
         });
-        
-        // Custom marker icon
-        const onuIcon = L.divIcon({
-            className: 'onu-marker',
-            iconSize: [16, 16]
-        });
-        
-        let markers = [];
-        let onuData = [];
-        
-        // Load ONU markers from API
-        window.loadMarkers = function() {
-            markers.forEach(m => map.removeLayer(m));
-            markers = [];
-            
-            fetch('<?= base_url('api/onuLocations') ?>')
-                .then(r => r.json())
-                .then(data => {
-                    onuData = data;
-                    document.getElementById('totalMarkers').textContent = data.length;
-                    document.getElementById('onlineDevices').textContent = data.length;
-                    document.getElementById('offlineDevices').textContent = 0;
-                    
-                    // Update list
-                    updateOnuList(data);
-                    
-                    data.forEach(loc => {
-                        if (loc.lat && loc.lng) {
-                            const marker = L.marker([loc.lat, loc.lng], { icon: onuIcon }).addTo(map);
-                            marker.bindPopup(createPopupContent(loc));
-                            marker.on('popupopen', () => loadPopupDetails(loc.serial, loc.name));
-                            markers.push(marker);
-                        }
-                    });
-                })
-                .catch(err => console.error('Error loading ONU:', err));
-        };
         
         // Create popup skeleton
         function createPopupContent(loc) {
@@ -380,16 +418,28 @@
 
                     <hr style="border-color: rgba(255,255,255,0.1); margin: 8px 0;">
                     
-                    <form onsubmit="quickEditWifi(event, '${serial}')">
+                    <!-- Form 1: Edit SSID -->
+                    <form onsubmit="quickEditSSID(event, '${serial}', '${savedName}')" style="margin-bottom: 8px;">
                         <label style="font-size: 0.8rem; color: var(--text-muted);">Edit SSID:</label>
-                        <input type="text" name="ssid" value="${ssid}" class="form-control" style="padding: 4px; font-size: 0.9rem; margin-bottom: 4px;">
-                        
-                        <label style="font-size: 0.8rem; color: var(--text-muted);">Edit Password:</label>
-                        <input type="text" name="password" placeholder="New Password" class="form-control" style="padding: 4px; font-size: 0.9rem; margin-bottom: 6px;">
-                        
-                        <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;">Simpan</button>
-                        <div class="result-msg" style="margin-top:4px;"></div>
+                        <input type="text" name="ssid" value="${ssid}" class="form-control" style="padding: 4px; font-size: 0.9rem; margin-bottom: 4px;" required>
+                        <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;"><i class="fas fa-wifi"></i> Simpan SSID</button>
+                        <div class="result-ssid" style="margin-top:4px; font-size: 0.85rem;"></div>
                     </form>
+                    
+                    <!-- Form 2: Edit Password -->
+                    <form onsubmit="quickEditPassword(event, '${serial}', '${savedName}')" style="margin-bottom: 8px;">
+                        <label style="font-size: 0.8rem; color: var(--text-muted);">Edit Password:</label>
+                        <input type="password" name="password" placeholder="Password baru (min 8 karakter)" class="form-control" style="padding: 4px; font-size: 0.9rem; margin-bottom: 4px;" minlength="8" required>
+                        <button type="submit" class="btn btn-warning btn-sm" style="width: 100%;"><i class="fas fa-key"></i> Simpan Password</button>
+                        <div class="result-password" style="margin-top:4px; font-size: 0.85rem;"></div>
+                    </form>
+                    
+                    <hr style="border-color: rgba(255,255,255,0.1); margin: 8px 0;">
+                    
+                    <!-- Tombol Hapus Lokasi -->
+                    <button onclick="deleteONULocation('${serial}', '${savedName}')" class="btn btn-danger btn-sm" style="width: 100%;">
+                        <i class="fas fa-trash"></i> Hapus Lokasi ONU
+                    </button>
                 `;
                 
                 container.innerHTML = html;
@@ -399,33 +449,90 @@
             }
         }
 
-        window.quickEditWifi = async function(e, serial) {
+        // Function 1: Edit SSID only
+        window.quickEditSSID = async function(e, serial, name) {
             e.preventDefault();
-            const output = e.target.querySelector('.result-msg');
+            const output = e.target.querySelector('.result-ssid');
             const ssid = e.target.ssid.value;
-            const password = e.target.password.value;
             
-            if(!password) {
-                output.innerHTML = '<span style="color: var(--neon-orange);">Password wajib diisi!</span>';
+            if(!ssid) {
+                output.innerHTML = '<span style="color: var(--neon-orange);">SSID wajib diisi!</span>';
                 return;
             }
 
-            output.innerHTML = '<span style="color: var(--neon-cyan);">Menyimpan...</span>';
+            output.innerHTML = '<span style="color: var(--neon-cyan);">⏳ Menyimpan SSID...</span>';
             
             try {
                  const res = await fetch('<?= base_url('api/onu/wifi') ?>', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ serial, ssid, password })
+                    body: JSON.stringify({ serial, ssid, password: '' }) // Empty password = only update SSID
                 });
                 const result = await res.json();
                  if (result.success) {
-                    output.innerHTML = '<span style="color: var(--neon-green);">✅ Berhasil!</span>';
+                    output.innerHTML = '<span style="color: var(--neon-green);">✅ SSID berhasil diperbarui!</span>';
                 } else {
                     output.innerHTML = `<span style="color: var(--neon-pink);">❌ ${result.message}</span>`;
                 }
             } catch(err) {
-                 output.innerHTML = `<span style="color: var(--neon-pink);">Error</span>`;
+                 output.innerHTML = `<span style="color: var(--neon-pink);">❌ Error: ${err.message}</span>`;
+            }
+        };
+        
+        // Function 2: Edit Password only
+        window.quickEditPassword = async function(e, serial, name) {
+            e.preventDefault();
+            const output = e.target.querySelector('.result-password');
+            const password = e.target.password.value;
+            
+            if(!password || password.length < 8) {
+                output.innerHTML = '<span style="color: var(--neon-orange);">Password minimal 8 karakter!</span>';
+                return;
+            }
+
+            output.innerHTML = '<span style="color: var(--neon-cyan);">⏳ Menyimpan password...</span>';
+            
+            try {
+                 const res = await fetch('<?= base_url('api/onu/wifi') ?>', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ serial, ssid: '', password }) // Empty SSID = only update password
+                });
+                const result = await res.json();
+                 if (result.success) {
+                    output.innerHTML = '<span style="color: var(--neon-green);">✅ Password berhasil diperbarui!</span>';
+                    e.target.reset(); // Clear password field
+                } else {
+                    output.innerHTML = `<span style="color: var(--neon-pink);">❌ ${result.message}</span>`;
+                }
+            } catch(err) {
+                 output.innerHTML = `<span style="color: var(--neon-pink);">❌ Error: ${err.message}</span>`;
+            }
+        };
+        
+        // Function 3: Delete ONU Location
+        window.deleteONULocation = async function(serial, name) {
+            if (!confirm(`Yakin ingin menghapus lokasi ONU "${name}" (${serial})?\n\nONU akan hilang dari peta.`)) {
+                return;
+            }
+            
+            try {
+                const res = await fetch('<?= base_url('api/onu/delete') ?>', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ serial })
+                });
+                const result = await res.json();
+                
+                if (result.success) {
+                    alert('✅ Lokasi ONU berhasil dihapus!');
+                    // Reload markers
+                    loadMarkers();
+                } else {
+                    alert('❌ Gagal menghapus: ' + (result.message || 'Unknown error'));
+                }
+            } catch(err) {
+                alert('❌ Error: ' + err.message);
             }
         };
         
