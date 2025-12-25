@@ -291,11 +291,12 @@ class GenieacsService
     }
 
     /**
-     * Update SSID and Wi‑Fi password on a device via GenieACS.
+     * Update SSID and/or Wi‑Fi password on a device via GenieACS.
+     * Can update SSID only, Password only, or both.
      *
      * @param string $serial   Device serial number (as used by GenieACS)
-     * @param string $ssid     New SSID value
-     * @param string $password New Wi‑Fi password
+     * @param string $ssid     New SSID value (empty = don't update)
+     * @param string $password New Wi‑Fi password (empty = don't update)
      * @return array           Same format as other request methods (code, body)
      */
     public function setWifi(string $serial, string $ssid, string $password): array
@@ -306,17 +307,64 @@ class GenieacsService
             unlink($cacheFile);
         }
         
+        // IMPORTANT: Find the actual device ID in GenieACS
+        // Device ID is usually NOT the same as serial number
+        $device = $this->getDevice($serial, false); // Don't use cache
+        
+        if (empty($device) || !isset($device['_id'])) {
+            log_message('error', "GenieACS setWifi: Device not found with serial={$serial}");
+            return [
+                'code' => 404,
+                'body' => ['error' => 'Device not found'],
+                'error' => "Device with serial '{$serial}' not found in GenieACS"
+            ];
+        }
+        
+        $deviceId = $device['_id'];
+        log_message('info', "GenieACS setWifi: Found device ID={$deviceId} for serial={$serial}");
+        
+        // Build parameter values array - GenieACS format: array of arrays
+        // Format: [parameter_path, value, type]
+        $parameterValues = [];
+        
+        if (!empty($ssid)) {
+            $parameterValues[] = [
+                'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID',
+                $ssid,
+                'xsd:string'
+            ];
+        }
+        
+        if (!empty($password)) {
+            // Try common password parameter paths
+            $parameterValues[] = [
+                'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.KeyPassphrase',
+                $password,
+                'xsd:string'
+            ];
+        }
+        
+        // If no parameters to update, return error
+        if (empty($parameterValues)) {
+            return [
+                'code' => 400,
+                'body' => ['error' => 'No parameters to update'],
+                'error' => 'SSID or Password must be provided'
+            ];
+        }
+        
         // Use setParameterValues task which is standard TR-069
+        // Format according to GenieACS documentation
         $task = [
             'name' => 'setParameterValues',
-            'parameterValues' => [
-                ['name' => 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID', 'value' => $ssid],
-                ['name' => 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey', 'value' => $password],
-            ]
+            'parameterValues' => $parameterValues
         ];
         
+        // URL encode the device ID (important for special characters)
+        $encodedDeviceId = urlencode($deviceId);
+        
         // Add 'connection_request' query param to trigger immediate contact
-        return $this->request('POST', "/devices/{$serial}/tasks?connection_request", $task);
+        return $this->request('POST', "/devices/{$encodedDeviceId}/tasks?connection_request", $task);
     }
 
     /**
