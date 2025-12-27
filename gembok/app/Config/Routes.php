@@ -39,7 +39,6 @@ $routes->get('/', 'Home::index');
 $routes->get('api/onuLocations', 'Api::onuLocations');
 $routes->get('api/onu/detail', 'Api::onuDetail');
 $routes->post('api/onu/add', 'Api::addOnu');
-$routes->post('api/onu/delete', 'Api::deleteOnu');
 $routes->post('api/onu/wifi', 'Api::updateWifi');
 $routes->post('api/whatsapp/webhook', 'Api::whatsappWebhook');
 
