@@ -1,6 +1,6 @@
 # [Environment]
 CI_ENVIRONMENT = production
-app.baseURL = "https://gembokphp.alijaya.net/"
+app.baseURL = "https://g.alijaya.net/"
 
 # -------------------------------------------------
 # [Database]
@@ -43,3 +43,4 @@ WHATSAPP_TOKEN=
 # [Security]
 # -------------------------------------------------
 CRON_SECRET=gembok_production_secret_2025
+
