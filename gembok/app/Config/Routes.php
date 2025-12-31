@@ -42,6 +42,16 @@ $routes->post('api/onu/add', 'Api::addOnu');
 $routes->post('api/onu/wifi', 'Api::updateWifi');
 $routes->post('api/whatsapp/webhook', 'Api::whatsappWebhook');
 
+// Realtime Data API
+$routes->get('api/dashboard/stats', 'Api::dashboardStats');
+$routes->get('api/analytics/summary', 'Api::analyticsSummary');
+$routes->get('api/invoices/recent', 'Api::recentInvoices');
+
+// Pagination API
+$routes->get('api/customers/list', 'Api::customersList');
+$routes->get('api/invoices/list', 'Api::invoicesList');
+$routes->get('api/mikrotik/users', 'Api::mikrotikUsers');
+
 /*
  * --------------------------------------------------------------------
  * Admin Routes
@@ -69,6 +79,10 @@ $routes->group('admin', ['filter' => 'admin'], function($routes) {
     
     // Trouble Ticket
     $routes->get('trouble', 'Admin::trouble');
+    $routes->post('trouble/create', 'Admin::createTicket');
+    $routes->post('trouble/update/(:num)', 'Admin::updateTicket/$1');
+    $routes->post('trouble/assign/(:num)', 'Admin::assignTicket/$1');
+    $routes->post('trouble/close/(:num)', 'Admin::closeTicket/$1');
     
     // Billing Routes
     $routes->group('billing', function($routes) {
@@ -87,6 +101,8 @@ $routes->group('admin', ['filter' => 'admin'], function($routes) {
         
         $routes->get('customers', 'Billing::customers');
         $routes->post('customers/add', 'Billing::addCustomer');
+        $routes->post('customers/edit/(:num)', 'Billing::editCustomer/$1');
+        $routes->get('customers/delete/(:num)', 'Billing::deleteCustomer/$1');
         $routes->get('customers/unisolate/(:num)', 'Billing::unisolateManual/$1');
     });
 

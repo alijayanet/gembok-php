@@ -284,6 +284,125 @@ class Billing extends BaseController
     }
 
     /**
+     * Edit Customer
+     */
+    public function editCustomer($id)
+    {
+        // Validation
+        $validation = \Config\Services::validation();
+        
+        $validation->setRules([
+            'name' => 'required|min_length[3]|max_length[100]',
+            'phone' => 'permit_empty|numeric|min_length[10]|max_length[15]',
+            'package_id' => 'required|numeric',
+            'isolation_date' => 'required|numeric|greater_than[0]|less_than[32]',
+        ]);
+
+        if (!$validation->withRequest($this->request)->run()) {
+            $errors = $validation->getErrors();
+            $errorMsg = implode(', ', $errors);
+            session()->setFlashdata('error', '❌ Validasi gagal: ' . $errorMsg);
+            return redirect()->back()->withInput();
+        }
+
+        // Get old data
+        $oldCustomer = $this->db->table('customers')->where('id', $id)->get()->getRowArray();
+        
+        if (!$oldCustomer) {
+            session()->setFlashdata('error', '❌ Customer tidak ditemukan');
+            return redirect()->to('/admin/billing/customers');
+        }
+
+        // Prepare update data
+        $data = [
+            'name' => $this->request->getPost('name'),
+            'phone' => $this->request->getPost('phone'),
+            'package_id' => $this->request->getPost('package_id'),
+            'isolation_date' => $this->request->getPost('isolation_date'),
+            'lat' => $this->request->getPost('lat'),
+            'lng' => $this->request->getPost('lng'),
+            'address' => $this->request->getPost('address'),
+            'email' => $this->request->getPost('email'),
+        ];
+
+        // Update database
+        $this->db->table('customers')->where('id', $id)->update($data);
+
+        // If package changed, update MikroTik profile
+        if ($data['package_id'] != $oldCustomer['package_id']) {
+            $newPackage = $this->db->table('packages')->where('id', $data['package_id'])->get()->getRowArray();
+            
+            if ($newPackage && !empty($oldCustomer['pppoe_username'])) {
+                try {
+                    if ($this->mikrotik->isConnected()) {
+                        $this->mikrotik->setPppoeUserProfile(
+                            $oldCustomer['pppoe_username'],
+                            $newPackage['profile_normal']
+                        );
+                        session()->setFlashdata('msg', '✅ Customer berhasil diupdate. Profile MikroTik juga telah diubah ke: ' . $newPackage['profile_normal']);
+                    } else {
+                        session()->setFlashdata('warning', '⚠️ Customer berhasil diupdate, tapi gagal update profile MikroTik (tidak terhubung). Silakan update manual.');
+                    }
+                } catch (\Exception $e) {
+                    session()->setFlashdata('warning', '⚠️ Customer berhasil diupdate, tapi gagal update profile MikroTik: ' . $e->getMessage());
+                }
+            }
+        } else {
+            session()->setFlashdata('msg', '✅ Customer berhasil diupdate');
+        }
+
+        return redirect()->to('/admin/billing/customers');
+    }
+
+    /**
+     * Delete Customer
+     */
+    public function deleteCustomer($id)
+    {
+        // Get customer data
+        $customer = $this->db->table('customers')->where('id', $id)->get()->getRowArray();
+        
+        if (!$customer) {
+            session()->setFlashdata('error', '❌ Customer tidak ditemukan');
+            return redirect()->to('/admin/billing/customers');
+        }
+
+        // Check if customer has unpaid invoices
+        $unpaidCount = $this->db->table('invoices')
+            ->where('customer_id', $id)
+            ->where('paid', 0)
+            ->countAllResults();
+        
+        if ($unpaidCount > 0) {
+            session()->setFlashdata('error', "❌ Tidak dapat menghapus customer yang masih memiliki {$unpaidCount} invoice belum lunas. Lunasi invoice terlebih dahulu.");
+            return redirect()->to('/admin/billing/customers');
+        }
+
+        // Optional: Delete PPPoE user from MikroTik
+        $deletePppoe = $this->request->getGet('delete_pppoe') === '1';
+        
+        if ($deletePppoe && !empty($customer['pppoe_username'])) {
+            try {
+                if ($this->mikrotik->isConnected()) {
+                    $this->mikrotik->deletePppoeSecret($customer['pppoe_username']);
+                    session()->setFlashdata('msg', "✅ Customer dan PPPoE user '{$customer['pppoe_username']}' berhasil dihapus dari MikroTik");
+                }
+            } catch (\Exception $e) {
+                session()->setFlashdata('warning', '⚠️ Customer dihapus dari database, tapi gagal hapus dari MikroTik: ' . $e->getMessage());
+            }
+        }
+
+        // Delete from database (cascade will delete invoices, onu_locations, etc)
+        $this->db->table('customers')->where('id', $id)->delete();
+        
+        if (!$deletePppoe) {
+            session()->setFlashdata('msg', '✅ Customer berhasil dihapus dari database. PPPoE user di MikroTik tidak dihapus.');
+        }
+
+        return redirect()->to('/admin/billing/customers');
+    }
+
+    /**
      * Invoices Management
      */
     public function invoices()

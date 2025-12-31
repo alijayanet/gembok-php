@@ -59,11 +59,22 @@ class Admin extends BaseController
         
         // 4. Today's Revenue (Pembayaran Hari Ini)
         $today = date('Y-m-d');
-        $revenueResult = $db->table('payments')
+        $revenueResult = $db->table('invoices')
             ->selectSum('amount')
-            ->like('paid_at', $today, 'after')
+            ->where('paid', 1)
+            ->where('paid_at IS NOT NULL')
+            ->where('DATE(paid_at) =', $today)
             ->get()->getRowArray();
         $todayRevenue = $revenueResult['amount'] ?? 0;
+        
+        // Jika hari ini kosong, tampilkan total semua revenue
+        if ($todayRevenue == 0) {
+            $allRevenue = $db->table('invoices')
+                ->selectSum('amount')
+                ->where('paid', 1)
+                ->get()->getRowArray();
+            $todayRevenue = $allRevenue['amount'] ?? 0;
+        }
         
         // 5. Pending Tickets (Support)
         $pendingTickets = $db->table('trouble_tickets')
@@ -88,7 +99,58 @@ class Admin extends BaseController
      */
     public function analytics()
     {
-        return view('admin/analytics');
+        $db = \Config\Database::connect();
+        
+        // 1. Pendapatan Bulan Ini (Invoice yang sudah paid bulan ini)
+        $currentMonth = date('Y-m');
+        $monthlyRevenue = $db->table('invoices')
+            ->selectSum('amount')
+            ->where('paid', 1)
+            ->where('paid_at IS NOT NULL')
+            ->where('DATE_FORMAT(paid_at, "%Y-%m") =', $currentMonth)
+            ->get()->getRowArray();
+        $revenueThisMonth = $monthlyRevenue['amount'] ?? 0;
+        
+        // Jika bulan ini kosong, ambil total semua yang sudah paid
+        if ($revenueThisMonth == 0) {
+            $allRevenue = $db->table('invoices')
+                ->selectSum('amount')
+                ->where('paid', 1)
+                ->get()->getRowArray();
+            $revenueThisMonth = $allRevenue['amount'] ?? 0;
+        }
+        
+        // 2. Invoice Lunas (Bulan Ini atau semua)
+        $paidInvoices = $db->table('invoices')
+            ->where('paid', 1)
+            ->countAllResults();
+        
+        // 3. Invoice Belum Lunas
+        $unpaidInvoices = $db->table('invoices')
+            ->where('paid', 0)
+            ->countAllResults();
+        
+        // 4. Total Pelanggan
+        $totalCustomers = $db->table('customers')->countAllResults();
+        
+        // 5. Recent Payments (10 terbaru)
+        $recentPayments = $db->table('invoices')
+            ->select('invoices.*, customers.name as customer_name')
+            ->join('customers', 'customers.id = invoices.customer_id', 'left')
+            ->where('invoices.paid', 1)
+            ->orderBy('invoices.paid_at', 'DESC')
+            ->limit(10)
+            ->get()->getResultArray();
+        
+        $data = [
+            'revenueThisMonth' => $revenueThisMonth,
+            'paidInvoices' => $paidInvoices,
+            'unpaidInvoices' => $unpaidInvoices,
+            'totalCustomers' => $totalCustomers,
+            'recentPayments' => $recentPayments
+        ];
+        
+        return view('admin/analytics', $data);
     }
 
     /**
@@ -254,6 +316,102 @@ class Admin extends BaseController
         }
         
         return view('admin/trouble', ['tickets' => $tickets]);
+    }
+
+    /**
+     * Create Trouble Ticket
+     */
+    public function createTicket()
+    {
+        $db = \Config\Database::connect();
+        
+        // Validation
+        $validation = \Config\Services::validation();
+        $validation->setRules([
+            'customer_id' => 'required|numeric',
+            'title' => 'required|min_length[5]|max_length[200]',
+            'description' => 'required|min_length[10]',
+            'priority' => 'required|in_list[low,medium,high,urgent]'
+        ]);
+
+        if (!$validation->withRequest($this->request)->run()) {
+            session()->setFlashdata('error', '❌ Validasi gagal: ' . implode(', ', $validation->getErrors()));
+            return redirect()->back()->withInput();
+        }
+
+        $data = [
+            'customer_id' => $this->request->getPost('customer_id'),
+            'title' => $this->request->getPost('title'),
+            'description' => $this->request->getPost('description'),
+            'priority' => $this->request->getPost('priority'),
+            'status' => 'pending',
+            'created_at' => date('Y-m-d H:i:s')
+        ];
+
+        $db->table('trouble_tickets')->insert($data);
+        
+        session()->setFlashdata('msg', '✅ Tiket berhasil dibuat');
+        return redirect()->to('/admin/trouble');
+    }
+
+    /**
+     * Update Trouble Ticket
+     */
+    public function updateTicket($id)
+    {
+        $db = \Config\Database::connect();
+        
+        $data = [
+            'title' => $this->request->getPost('title'),
+            'description' => $this->request->getPost('description'),
+            'priority' => $this->request->getPost('priority'),
+            'notes' => $this->request->getPost('notes'),
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+
+        $db->table('trouble_tickets')->where('id', $id)->update($data);
+        
+        session()->setFlashdata('msg', '✅ Tiket berhasil diupdate');
+        return redirect()->to('/admin/trouble');
+    }
+
+    /**
+     * Assign Trouble Ticket to Technician
+     */
+    public function assignTicket($id)
+    {
+        $db = \Config\Database::connect();
+        
+        $data = [
+            'assigned_to' => $this->request->getPost('assigned_to'),
+            'status' => 'in_progress',
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+
+        $db->table('trouble_tickets')->where('id', $id)->update($data);
+        
+        session()->setFlashdata('msg', '✅ Tiket berhasil di-assign');
+        return redirect()->to('/admin/trouble');
+    }
+
+    /**
+     * Close Trouble Ticket
+     */
+    public function closeTicket($id)
+    {
+        $db = \Config\Database::connect();
+        
+        $data = [
+            'status' => 'resolved',
+            'resolved_at' => date('Y-m-d H:i:s'),
+            'resolution_notes' => $this->request->getPost('resolution_notes'),
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+
+        $db->table('trouble_tickets')->where('id', $id)->update($data);
+        
+        session()->setFlashdata('msg', '✅ Tiket berhasil ditutup');
+        return redirect()->to('/admin/trouble');
     }
 
     /**

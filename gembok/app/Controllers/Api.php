@@ -262,6 +262,294 @@ class Api extends BaseController
     }
     
     /**
+     * Realtime Dashboard Stats
+     * GET /api/dashboard/stats
+     */
+    public function dashboardStats()
+    {
+        $db = \Config\Database::connect();
+        
+        try {
+            // Today's revenue
+            $today = date('Y-m-d');
+            $revenueResult = $db->table('invoices')
+                ->selectSum('amount')
+                ->where('paid', 1)
+                ->where('paid_at IS NOT NULL')
+                ->where('DATE(paid_at) =', $today)
+                ->get()->getRowArray();
+            $todayRevenue = $revenueResult['amount'] ?? 0;
+            
+            // If today empty, show total
+            if ($todayRevenue == 0) {
+                $allRevenue = $db->table('invoices')
+                    ->selectSum('amount')
+                    ->where('paid', 1)
+                    ->get()->getRowArray();
+                $todayRevenue = $allRevenue['amount'] ?? 0;
+            }
+            
+            // Online PPPoE (from MikroTik if available)
+            $onlinePppoe = $db->table('customers')->where('status', 'active')->countAllResults();
+            
+            // Pending invoices
+            $pendingInvoices = $db->table('invoices')->where('status', 'pending')->countAllResults();
+            
+            // Total devices
+            $totalDevices = $db->table('onu_locations')->countAllResults();
+            
+            // Pending tickets
+            $pendingTickets = $db->table('trouble_tickets')
+                ->whereIn('status', ['pending', 'in_progress'])
+                ->countAllResults();
+            
+            $stats = [
+                'todayRevenue' => (int)$todayRevenue,
+                'onlinePppoe' => (int)$onlinePppoe,
+                'pendingInvoices' => (int)$pendingInvoices,
+                'totalDevices' => (int)$totalDevices,
+                'pendingTickets' => (int)$pendingTickets,
+                'timestamp' => time()
+            ];
+            
+            return $this->response->setJSON(['success' => true, 'stats' => $stats]);
+            
+        } catch (\Exception $e) {
+            return $this->response->setJSON(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+    
+    /**
+     * Realtime Analytics Summary
+     * GET /api/analytics/summary
+     */
+    public function analyticsSummary()
+    {
+        $db = \Config\Database::connect();
+        
+        try {
+            // Revenue this month
+            $currentMonth = date('Y-m');
+            $monthlyRevenue = $db->table('invoices')
+                ->selectSum('amount')
+                ->where('paid', 1)
+                ->where('paid_at IS NOT NULL')
+                ->where('DATE_FORMAT(paid_at, "%Y-%m") =', $currentMonth)
+                ->get()->getRowArray();
+            $revenueThisMonth = $monthlyRevenue['amount'] ?? 0;
+            
+            // If empty, show all time
+            if ($revenueThisMonth == 0) {
+                $allRevenue = $db->table('invoices')
+                    ->selectSum('amount')
+                    ->where('paid', 1)
+                    ->get()->getRowArray();
+                $revenueThisMonth = $allRevenue['amount'] ?? 0;
+            }
+            
+            // Paid invoices
+            $paidInvoices = $db->table('invoices')->where('paid', 1)->countAllResults();
+            
+            // Unpaid invoices
+            $unpaidInvoices = $db->table('invoices')->where('paid', 0)->countAllResults();
+            
+            // Total customers
+            $totalCustomers = $db->table('customers')->countAllResults();
+            
+            $summary = [
+                'revenueThisMonth' => (int)$revenueThisMonth,
+                'paidInvoices' => (int)$paidInvoices,
+                'unpaidInvoices' => (int)$unpaidInvoices,
+                'totalCustomers' => (int)$totalCustomers,
+                'timestamp' => time()
+            ];
+            
+            return $this->response->setJSON(['success' => true, 'summary' => $summary]);
+            
+        } catch (\Exception $e) {
+            return $this->response->setJSON(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+    
+    /**
+     * Realtime Recent Invoices
+     * GET /api/invoices/recent
+     */
+    public function recentInvoices()
+    {
+        $db = \Config\Database::connect();
+        
+        try {
+            $limit = $this->request->getGet('limit') ?? 10;
+            
+            $invoices = $db->table('invoices')
+                ->select('invoices.*, customers.name as customer_name')
+                ->join('customers', 'customers.id = invoices.customer_id', 'left')
+                ->orderBy('invoices.created_at', 'DESC')
+                ->limit($limit)
+                ->get()->getResultArray();
+            
+            return $this->response->setJSON([
+                'success' => true, 
+                'invoices' => $invoices,
+                'count' => count($invoices),
+                'timestamp' => time()
+            ]);
+            
+        } catch (\Exception $e) {
+            return $this->response->setJSON(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+    
+    /**
+     * Customers List with Pagination
+     * GET /api/customers/list?page=1&per_page=50&search=
+     */
+    public function customersList()
+    {
+        $db = \Config\Database::connect();
+        
+        try {
+            $page = max(1, (int)($this->request->getGet('page') ?? 1));
+            $perPage = max(10, min(100, (int)($this->request->getGet('per_page') ?? 50)));
+            $search = $this->request->getGet('search') ?? '';
+            
+            $builder = $db->table('customers')
+                ->select('customers.*, packages.name as package_name, packages.price as package_price')
+                ->join('packages', 'packages.id = customers.package_id', 'left');
+            
+            // Search
+            if (!empty($search)) {
+                $builder->groupStart()
+                    ->like('customers.name', $search)
+                    ->orLike('customers.phone', $search)
+                    ->orLike('customers.pppoe_username', $search)
+                    ->groupEnd();
+            }
+            
+            // Count total
+            $total = $builder->countAllResults(false);
+            $totalPages = ceil($total / $perPage);
+            
+            // Get data
+            $offset = ($page - 1) * $perPage;
+            $customers = $builder->orderBy('customers.id', 'DESC')
+                ->limit($perPage, $offset)
+                ->get()->getResultArray();
+            
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => $customers,
+                'pagination' => [
+                    'current_page' => $page,
+                    'per_page' => $perPage,
+                    'total_records' => $total,
+                    'total_pages' => $totalPages
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            return $this->response->setJSON(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+    
+    /**
+     * Invoices List with Pagination
+     * GET /api/invoices/list?page=1&per_page=50&search=
+     */
+    public function invoicesList()
+    {
+        $db = \Config\Database::connect();
+        
+        try {
+            $page = max(1, (int)($this->request->getGet('page') ?? 1));
+            $perPage = max(10, min(100, (int)($this->request->getGet('per_page') ?? 50)));
+            $search = $this->request->getGet('search') ?? '';
+            
+            $builder = $db->table('invoices')
+                ->select('invoices.*, customers.name as customer_name, customers.pppoe_username')
+                ->join('customers', 'customers.id = invoices.customer_id', 'left');
+            
+            // Search
+            if (!empty($search)) {
+                $builder->groupStart()
+                    ->like('invoices.invoice_number', $search)
+                    ->orLike('customers.name', $search)
+                    ->orLike('customers.pppoe_username', $search)
+                    ->groupEnd();
+            }
+            
+            // Count total
+            $total = $builder->countAllResults(false);
+            $totalPages = ceil($total / $perPage);
+            
+            // Get data
+            $offset = ($page - 1) * $perPage;
+            $invoices = $builder->orderBy('invoices.created_at', 'DESC')
+                ->limit($perPage, $offset)
+                ->get()->getResultArray();
+            
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => $invoices,
+                'pagination' => [
+                    'current_page' => $page,
+                    'per_page' => $perPage,
+                    'total_records' => $total,
+                    'total_pages' => $totalPages
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            return $this->response->setJSON(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+    
+    /**
+     * MikroTik Users with Pagination
+     * GET /api/mikrotik/users?page=1&per_page=50
+     */
+    public function mikrotikUsers()
+    {
+        try {
+            $page = max(1, (int)($this->request->getGet('page') ?? 1));
+            $perPage = max(10, min(100, (int)($this->request->getGet('per_page') ?? 50)));
+            
+            $mikrotik = new \App\Services\MikrotikService();
+            
+            if (!$mikrotik->isConnected()) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'error' => 'Cannot connect to MikroTik'
+                ]);
+            }
+            
+            // Get all users
+            $allUsers = $mikrotik->getPppoeSecrets();
+            $total = count($allUsers);
+            $totalPages = ceil($total / $perPage);
+            
+            // Paginate
+            $offset = ($page - 1) * $perPage;
+            $users = array_slice($allUsers, $offset, $perPage);
+            
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => $users,
+                'pagination' => [
+                    'current_page' => $page,
+                    'per_page' => $perPage,
+                    'total_records' => $total,
+                    'total_pages' => $totalPages
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            return $this->response->setJSON(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+    
+    /**
      * WhatsApp Webhook
      */
     public function whatsappWebhook()
