@@ -16,7 +16,7 @@
             <i class="fas fa-money-bill-wave"></i>
         </div>
         <div class="stat-info">
-            <h3>Rp 0</h3>
+            <h3>Rp <?= number_format($revenueThisMonth ?? 0, 0, ',', '.') ?></h3>
             <p>Pendapatan Bulan Ini</p>
         </div>
     </div>
@@ -25,7 +25,7 @@
             <i class="fas fa-check-circle"></i>
         </div>
         <div class="stat-info">
-            <h3>0</h3>
+            <h3><?= $paidInvoices ?? 0 ?></h3>
             <p>Invoice Lunas</p>
         </div>
     </div>
@@ -34,7 +34,7 @@
             <i class="fas fa-clock"></i>
         </div>
         <div class="stat-info">
-            <h3>0</h3>
+            <h3><?= $unpaidInvoices ?? 0 ?></h3>
             <p>Invoice Belum Lunas</p>
         </div>
     </div>
@@ -43,7 +43,7 @@
             <i class="fas fa-users"></i>
         </div>
         <div class="stat-info">
-            <h3>0</h3>
+            <h3><?= $totalCustomers ?? 0 ?></h3>
             <p>Total Pelanggan</p>
         </div>
     </div>
@@ -99,11 +99,27 @@
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">
-                    Belum ada data pembayaran
-                </td>
-            </tr>
+            <?php if (!empty($recentPayments)): ?>
+                <?php foreach ($recentPayments as $payment): ?>
+                <tr>
+                    <td><?= esc($payment['customer_name']) ?></td>
+                    <td><?= esc($payment['invoice_number'] ?? '-') ?></td>
+                    <td>Rp <?= number_format($payment['amount'], 0, ',', '.') ?></td>
+                    <td>
+                        <span class="badge badge-success">
+                            <i class="fas fa-check-circle"></i> Lunas
+                        </span>
+                    </td>
+                    <td><?= date('d M Y', strtotime($payment['paid_at'])) ?></td>
+                </tr>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <tr>
+                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                        Belum ada data pembayaran
+                    </td>
+                </tr>
+            <?php endif; ?>
         </tbody>
     </table>
 </div>
