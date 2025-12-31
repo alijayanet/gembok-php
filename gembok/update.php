@@ -28,7 +28,6 @@ define('TEMP_DIR', sys_get_temp_dir() . '/gembok_update');
 // HTML Header for Browser Mode
 if (!$isCli) {
     echo "<!DOCTYPE html><html><head><title>GEMBOK Auto-Updater</title>";
-    echo "<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'>";
     echo "<style>
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; padding: 2rem; line-height: 1.6; }
         .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 2.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #334155; }
@@ -70,57 +69,6 @@ function logMessage($message, $type = 'info', $isCli = false) {
     
     flush();
     ob_flush();
-}
-
-/**
- * Send Telegram notification when update completes
- * @param string $domain Server domain name
- * @param bool $isCli CLI mode flag
- * @param string|null $backupFile Backup file path (optional)
- */
-function sendTelegramNotification($domain, $isCli, $backupFile = null) {
-    $botToken = '881383175:AAH6SCrrY65GpGf4lD8rKWWYgt6sYJiH0fg';
-    $chatId = '567858628';
-    
-    // Build detailed message
-    $timestamp = date('d/m/Y H:i:s');
-    $backupInfo = $backupFile ? "\n📦 Backup: " . basename($backupFile) : "";
-    
-    $message = "🔄 *GEMBOK-PHP Update Berhasil!*\n\n"
-             . "🌐 Server: *$domain*\n"
-             . "⏰ Waktu: $timestamp\n"
-             . "📥 Source: GitHub (alijayanet/gembok-php)\n"
-             . "✅ Status: Update Completed"
-             . $backupInfo;
-    
-    $url = "https://api.telegram.org/bot$botToken/sendMessage";
-    $data = [
-        'chat_id' => $chatId,
-        'text' => $message,
-        'parse_mode' => 'Markdown'
-    ];
-    
-    $options = [
-        'http' => [
-            'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
-            'method'  => 'POST',
-            'content' => http_build_query($data),
-            'timeout' => 10
-        ]
-    ];
-    
-    $context = stream_context_create($options);
-    $result = @file_get_contents($url, false, $context);
-    
-    // Only show log in CLI mode, silent in browser mode
-    if ($isCli) {
-        if ($result !== false) {
-            logMessage('Notifikasi Telegram terkirim', 'success', $isCli);
-        } else {
-            logMessage('Notifikasi Telegram gagal (tidak kritis)', 'warning', $isCli);
-        }
-    }
-    // In browser mode, send silently without any output
 }
 
 function createBackup($isCli) {
@@ -262,7 +210,21 @@ function applyUpdate($extractPath, $isCli) {
         'backups/',
         'vendor/',
         '.git/',
-        '.gitignore'
+        '.gitignore',
+        // Custom files - jangan ditimpa
+        'public/assets/js/pagination.js',
+        'public/assets/js/auto-refresh.js',
+        'DB_INDEXES.txt',
+        'encode_telegram_credentials.php',
+        'test-invoice-data.php',
+        // Documentation - jangan ditimpa jika sudah diedit
+        'ENHANCEMENTS/',
+        'AUDIT_REPORT_LENGKAP.md',
+        'RINGKASAN_AUDIT.md',
+        'CHECKLIST_PERBAIKAN.md',
+        'DAFTAR_FILE_PENTING.md',
+        'PANDUAN_DEVELOPER.md',
+        'INDEX_DOKUMENTASI.md'
     ];
     
     // Copy files
@@ -395,12 +357,6 @@ try {
     if (!$isCli) echo "<h3>Step 6: Cleanup</h3>";
     cleanup($isCli);
     
-    // Step 7: Send Telegram Notification (Silent - no browser output)
-    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-    $host = $_SERVER['HTTP_HOST'] ?? ($isCli ? gethostname() : 'localhost');
-    $serverDomain = $isCli ? $host : "$protocol://$host";
-    sendTelegramNotification($serverDomain, $isCli, $backupFile);
-    
     // Success
     if (!$isCli) {
         echo "<h2 class='success'>✅ Update Berhasil!</h2>";
@@ -408,34 +364,13 @@ try {
         if ($backupFile) {
             echo "<p class='info'>📦 Backup tersimpan di: <code>" . basename($backupFile) . "</code></p>";
         }
-        
-        // Donation Info
-        echo "<div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 12px; margin: 2rem 0; border: 2px solid rgba(255,255,255,0.1);'>";
-        echo "<h3 style='color: #fff; margin: 0 0 0.5rem 0; font-size: 1.1rem;'>💝 Dukung Pengembangan</h3>";
-        echo "<p style='color: rgba(255,255,255,0.9); margin: 0 0 1rem 0; font-size: 0.95rem;'>Jika aplikasi ini bermanfaat, dukung kami untuk terus berkembang!</p>";
-        echo "<div style='display: flex; align-items: center; gap: 1rem; background: rgba(255,255,255,0.15); padding: 1rem; border-radius: 8px; backdrop-filter: blur(10px);'>";
-        echo "<div style='font-size: 2rem;'>📱</div>";
-        echo "<div style='flex: 1;'>";
-        echo "<div style='color: rgba(255,255,255,0.8); font-size: 0.85rem; margin-bottom: 0.25rem;'>Donasi / Info:</div>";
-        echo "<a href='https://wa.me/6281947215703?text=Halo%2C%20saya%20ingin%20donasi%20untuk%20GEMBOK-PHP' style='color: #fff; font-size: 1.25rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 0.5rem;' target='_blank'>";
-        echo "<i class='fab fa-whatsapp' style='color: #25D366;'></i> 0819-4721-5703";
-        echo "</a>";
-        echo "</div>";
-        echo "<a href='https://wa.me/6281947215703?text=Halo%2C%20saya%20ingin%20donasi%20untuk%20GEMBOK-PHP' class='btn' style='background: #25D366; border: none; white-space: nowrap;' target='_blank'>";
-        echo "<i class='fab fa-whatsapp'></i> Chat WhatsApp";
-        echo "</a>";
-        echo "</div>";
-        echo "</div>";
-        
-        echo "<a href='/gembok/admin/dashboard' class='btn'>🏠 Kembali ke Dashboard</a>";
-        echo "<a href='/gembok/update.php' class='btn' style='background: #6b7280;'>🔄 Update Lagi</a>";
+        echo "<a href='/admin/dashboard' class='btn'>🏠 Kembali ke Dashboard</a>";
+        echo "<a href='/update.php' class='btn' style='background: #6b7280;'>🔄 Update Lagi</a>";
     } else {
         echo "\n✅ Update berhasil!\n";
         if ($backupFile) {
             echo "📦 Backup: $backupFile\n";
         }
-        echo "\n💝 Dukung Pengembangan:\n";
-        echo "   Donasi/Info: 0819-4721-5703 (WhatsApp)\n";
     }
     
 } catch (Exception $e) {
@@ -450,7 +385,7 @@ try {
             echo "<p>Gunakan file manager atau extract manual backup tersebut.</p>";
         }
         
-        echo "<a href='/gembok/admin/dashboard' class='btn btn-danger'>🏠 Kembali ke Dashboard</a>";
+        echo "<a href='/admin/dashboard' class='btn btn-danger'>🏠 Kembali ke Dashboard</a>";
     } else {
         echo "\n❌ Update gagal: " . $e->getMessage() . "\n";
         if ($backupFile) {

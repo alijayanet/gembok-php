@@ -1,6 +1,6 @@
 # [Environment]
 CI_ENVIRONMENT = production
-app.baseURL = "https://g.alijaya.net/"
+app.baseURL = "https://gembokphp.alijaya.net/"
 
 # -------------------------------------------------
 # [Database]
@@ -43,4 +43,23 @@ WHATSAPP_TOKEN=
 # [Security]
 # -------------------------------------------------
 CRON_SECRET=gembok_production_secret_2025
+
+# -------------------------------------------------
+# [Tripay Payment Gateway]
+# -------------------------------------------------
+TRIPAY_API_KEY=
+TRIPAY_PRIVATE_KEY=
+TRIPAY_MERCHANT_CODE=
+TRIPAY_MODE=sandbox
+
+# -------------------------------------------------
+# [Telegram Bot]
+# Get bot token from @BotFather in Telegram
+# Get Chat ID from @userinfobot
+# -------------------------------------------------
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_ADMIN_CHAT_IDS=
+
+# Setup Webhook:
+# https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://yourdomain.com/webhook/telegram
 

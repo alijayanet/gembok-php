@@ -1,0 +1,38 @@
+-- =============================================
+-- DATABASE INDEXES FOR PERFORMANCE OPTIMIZATION
+-- Run this SQL in your database via phpMyAdmin
+-- =============================================
+
+-- Customers Table Indexes
+ALTER TABLE customers ADD INDEX idx_phone (phone);
+ALTER TABLE customers ADD INDEX idx_status (status);
+ALTER TABLE customers ADD INDEX idx_pppoe (pppoe_username);
+ALTER TABLE customers ADD INDEX idx_package (package_id);
+
+-- Invoices Table Indexes
+ALTER TABLE invoices ADD INDEX idx_due_date (due_date);
+ALTER TABLE invoices ADD INDEX idx_status (status);
+ALTER TABLE invoices ADD INDEX idx_paid (paid);
+ALTER TABLE invoices ADD INDEX idx_customer (customer_id, status);
+ALTER TABLE invoices ADD INDEX idx_paid_at (paid_at);
+
+-- Trouble Tickets Table Indexes
+ALTER TABLE trouble_tickets ADD INDEX idx_status (status);
+ALTER TABLE trouble_tickets ADD INDEX idx_customer (customer_id);
+ALTER TABLE trouble_tickets ADD INDEX idx_created (created_at);
+
+-- ONU Locations Table Indexes
+ALTER TABLE onu_locations ADD INDEX idx_customer (customer_id);
+ALTER TABLE onu_locations ADD INDEX idx_serial (serial_number);
+
+-- Webhook Logs Table Indexes
+ALTER TABLE webhook_logs ADD INDEX idx_source (source);
+ALTER TABLE webhook_logs ADD INDEX idx_created (created_at);
+
+-- =============================================
+-- VERIFY INDEXES
+-- =============================================
+-- Run this to check if indexes were created:
+-- SHOW INDEX FROM customers;
+-- SHOW INDEX FROM invoices;
+-- SHOW INDEX FROM trouble_tickets;
