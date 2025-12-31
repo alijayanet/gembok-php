@@ -1,0 +1,4 @@
+[24-Dec-2025 15:49:26 UTC] PHP Fatal error:  Uncaught Error: Call to undefined method App\Services\MikrotikService::getPppoeActive() in /home/alijayan/gembok.alijaya.net/gembok/public/temp-mikrotik.php:87
+Stack trace:
+#0 {main}
+  thrown in /home/alijayan/gembok.alijaya.net/gembok/public/temp-mikrotik.php on line 87

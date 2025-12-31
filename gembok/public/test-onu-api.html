@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test ONU Locations API</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #1e293b;
+            padding: 2rem;
+            border-radius: 12px;
+        }
+        h1 {
+            color: #38bdf8;
+        }
+        pre {
+            background: #0f172a;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            color: #4ade80;
+        }
+        .btn {
+            background: #0ea5e9;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+        .btn:hover {
+            background: #0284c7;
+        }
+        .error {
+            color: #f87171;
+        }
+        .success {
+            color: #4ade80;
+        }
+        .warning {
+            color: #fbbf24;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+        th {
+            background: #0f172a;
+            color: #38bdf8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Test ONU Locations API</h1>
+        <p>Halaman ini untuk debug kenapa ONU tidak muncul di map.</p>
+        
+        <button class="btn" onclick="testAPI()">🔄 Test API</button>
+        <button class="btn" onclick="testDatabase()">🗄️ Test Database</button>
+        
+        <h2>📊 Hasil Test:</h2>
+        <div id="result"></div>
+        
+        <h2>📋 Data ONU:</h2>
+        <div id="data"></div>
+    </div>
+    
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            const dataDiv = document.getElementById('data');
+            
+            resultDiv.innerHTML = '<p class="warning">⏳ Loading...</p>';
+            
+            try {
+                const response = await fetch('/api/onuLocations');
+                const data = await response.json();
+                
+                console.log('API Response:', data);
+                
+                if (data.length === 0) {
+                    resultDiv.innerHTML = '<p class="warning">⚠️ API mengembalikan data kosong!</p><p>Kemungkinan: Belum ada data di database atau tabel tidak ada.</p>';
+                    dataDiv.innerHTML = '';
+                } else {
+                    resultDiv.innerHTML = `<p class="success">✅ API berhasil! Ditemukan ${data.length} ONU</p>`;
+                    
+                    // Display as table
+                    let html = '<table><thead><tr><th>ID</th><th>Name</th><th>Serial</th><th>Lat</th><th>Lng</th><th>Status</th></tr></thead><tbody>';
+                    
+                    data.forEach(onu => {
+                        const hasCoords = onu.lat && onu.lng;
+                        const status = hasCoords 
+                            ? '<span class="success">✅ OK</span>' 
+                            : '<span class="error">❌ Missing Coords</span>';
+                        
+                        html += `<tr>
+                            <td>${onu.id || '-'}</td>
+                            <td>${onu.name || '-'}</td>
+                            <td>${onu.serial || '-'}</td>
+                            <td>${onu.lat || 'NULL'}</td>
+                            <td>${onu.lng || 'NULL'}</td>
+                            <td>${status}</td>
+                        </tr>`;
+                    });
+                    
+                    html += '</tbody></table>';
+                    dataDiv.innerHTML = html;
+                    
+                    // Also show raw JSON
+                    dataDiv.innerHTML += '<h3>Raw JSON:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+                console.error('Error:', error);
+            }
+        }
+        
+        async function testDatabase() {
+            const resultDiv = document.getElementById('result');
+            const dataDiv = document.getElementById('data');
+            
+            resultDiv.innerHTML = '<p class="warning">⏳ Checking database...</p>';
+            
+            try {
+                // Try to fetch from API
+                const response = await fetch('/api/onuLocations');
+                const data = await response.json();
+                
+                let html = '<h3>Database Check:</h3>';
+                html += '<ul>';
+                html += `<li>Total records: <strong>${data.length}</strong></li>`;
+                
+                if (data.length > 0) {
+                    const withCoords = data.filter(d => d.lat && d.lng).length;
+                    const withoutCoords = data.length - withCoords;
+                    
+                    html += `<li class="success">Records with coordinates: <strong>${withCoords}</strong></li>`;
+                    if (withoutCoords > 0) {
+                        html += `<li class="error">Records WITHOUT coordinates: <strong>${withoutCoords}</strong></li>`;
+                    }
+                    
+                    // Check data types
+                    const firstRecord = data[0];
+                    html += '<li>First record data types:</li>';
+                    html += '<ul>';
+                    html += `<li>lat type: <code>${typeof firstRecord.lat}</code> (should be "number")</li>`;
+                    html += `<li>lng type: <code>${typeof firstRecord.lng}</code> (should be "number")</li>`;
+                    html += '</ul>';
+                }
+                
+                html += '</ul>';
+                
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Database check failed: ${error.message}</p>`;
+            }
+        }
+        
+        // Auto-run on load
+        window.onload = function() {
+            testAPI();
+        };
+    </script>
+</body>
+</html>
