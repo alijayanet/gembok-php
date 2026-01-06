@@ -779,6 +779,69 @@ class Admin extends BaseController
                 return $this->response->setJSON(['success' => false, 'message' => 'Action tidak dikenal']);
         }
     }
+
+    /**
+     * System Update Page
+     */
+    public function update()
+    {
+        // Get current version from a file or database
+        // ROOTPATH points to the application root (where gembok folder contents are)
+        $versionFile = ROOTPATH . 'version.txt';
+        $currentVersion = file_exists($versionFile) ? trim(file_get_contents($versionFile)) : 'Unknown';
+        
+        // Get last backup info
+        $backupDir = ROOTPATH . 'backups';
+        $lastBackup = null;
+        if (is_dir($backupDir)) {
+            $backups = glob($backupDir . '/backup_*.zip');
+            if (!empty($backups)) {
+                usort($backups, function($a, $b) {
+                    return filemtime($b) - filemtime($a);
+                });
+                $lastBackup = [
+                    'file' => basename($backups[0]),
+                    'date' => date('Y-m-d H:i:s', filemtime($backups[0])),
+                    'size' => round(filesize($backups[0]) / 1024 / 1024, 2) . ' MB'
+                ];
+            }
+        }
+        
+        // Check if update.php exists in root folder
+        $updateFileExists = file_exists(ROOTPATH . 'update.php');
+        
+        $data = [
+            'currentVersion' => $currentVersion,
+            'lastBackup' => $lastBackup,
+            'updateFileExists' => $updateFileExists,
+            'githubRepo' => 'alijayanet/gembok-php',
+            'githubBranch' => 'main'
+        ];
+        
+        return view('admin/update', $data);
+    }
+
+    /**
+     * Run System Update (AJAX)
+     */
+    public function runUpdate()
+    {
+        // This runs the update.php logic and returns progress
+        $updateFile = ROOTPATH . 'update.php';
+        
+        if (!file_exists($updateFile)) {
+            return $this->response->setJSON([
+                'success' => false, 
+                'message' => 'File update.php tidak ditemukan'
+            ]);
+        }
+        
+        // Redirect to update.php with AJAX token
+        return $this->response->setJSON([
+            'success' => true,
+            'redirect' => base_url('update.php')
+        ]);
+    }
 }
 
 

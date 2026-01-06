@@ -104,6 +104,11 @@ $routes->group('admin', ['filter' => 'admin'], function($routes) {
         $routes->post('customers/edit/(:num)', 'Billing::editCustomer/$1');
         $routes->get('customers/delete/(:num)', 'Billing::deleteCustomer/$1');
         $routes->get('customers/unisolate/(:num)', 'Billing::unisolateManual/$1');
+        
+        // Export/Import Customers
+        $routes->get('customers/export', 'Billing::exportCustomers');
+        $routes->get('customers/template', 'Billing::downloadTemplate');
+        $routes->post('customers/import', 'Billing::importCustomers');
     });
 
     $routes->get('setting', 'AdminSettings::index');
@@ -115,6 +120,10 @@ $routes->group('admin', ['filter' => 'admin'], function($routes) {
     // Telegram webhook management
     $routes->post('settings/setTelegramWebhook', 'AdminSettings::setTelegramWebhook');
     $routes->post('settings/deleteTelegramWebhook', 'AdminSettings::deleteTelegramWebhook');
+    
+    // System Update
+    $routes->get('update', 'Admin::update');
+    $routes->post('update/run', 'Admin::runUpdate');
 });
 
 /*
