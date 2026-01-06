@@ -224,6 +224,7 @@ function applyUpdate($extractPath, $isCli) {
         'CHECKLIST_PERBAIKAN.md',
         'DAFTAR_FILE_PENTING.md',
         'PANDUAN_DEVELOPER.md',
+        'PANDUAN_UPDATE.md',
         'INDEX_DOKUMENTASI.md'
     ];
     
@@ -365,7 +366,7 @@ try {
             echo "<p class='info'>📦 Backup tersimpan di: <code>" . basename($backupFile) . "</code></p>";
         }
         echo "<a href='/admin/dashboard' class='btn'>🏠 Kembali ke Dashboard</a>";
-        echo "<a href='/update.php' class='btn' style='background: #6b7280;'>🔄 Update Lagi</a>";
+        echo "<a href='/gembok/update.php' class='btn' style='background: #6b7280;'>🔄 Update Lagi</a>";
     } else {
         echo "\n✅ Update berhasil!\n";
         if ($backupFile) {
