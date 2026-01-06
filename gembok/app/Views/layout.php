@@ -970,6 +970,12 @@
                 <i class="fas fa-cog menu-icon"></i>
                 <span class="menu-text">Setting</span>
             </a>
+            
+            <a href="<?= base_url('admin/update') ?>" class="menu-item <?= uri_string() === 'admin/update' ? 'active' : '' ?>">
+                <i class="fas fa-cloud-download-alt menu-icon"></i>
+                <span class="menu-text">Update</span>
+                <span class="menu-badge" style="background: var(--neon-green); color: var(--bg-primary);">New</span>
+            </a>
         </nav>
         
         <div class="sidebar-footer">
