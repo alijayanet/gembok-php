@@ -225,10 +225,34 @@
 <div class="card">
     <div class="card-header">
         <h3 class="card-title"><i class="fas fa-users"></i> Daftar Pelanggan</h3>
-        <div style="margin-left: auto;">
-             <input type="text" id="searchCustomer" class="form-control" placeholder="Cari pelanggan..." style="width: 200px; padding: 0.4rem;">
+        <div style="margin-left: auto; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <!-- Export/Import Buttons -->
+            <div class="btn-group" style="display: flex; gap: 0.25rem;">
+                <a href="<?= base_url('admin/billing/customers/export') ?>" class="btn btn-secondary btn-sm" title="Export ke Excel">
+                    <i class="fas fa-file-export"></i> Export
+                </a>
+                <a href="<?= base_url('admin/billing/customers/template') ?>" class="btn btn-secondary btn-sm" title="Download Template Import">
+                    <i class="fas fa-file-download"></i> Template
+                </a>
+                <button type="button" class="btn btn-primary btn-sm" onclick="openImportModal()" title="Import dari Excel">
+                    <i class="fas fa-file-import"></i> Import
+                </button>
+            </div>
+            <input type="text" id="searchCustomer" class="form-control" placeholder="Cari pelanggan..." style="width: 200px; padding: 0.4rem;">
         </div>
     </div>
+    
+    <!-- Import Errors Display -->
+    <?php if (session()->has('import_errors')): ?>
+    <div style="padding: 1rem; background: rgba(255, 107, 53, 0.1); border-left: 4px solid var(--neon-orange); margin: 0 1rem 1rem 1rem; border-radius: 0 8px 8px 0;">
+        <strong style="color: var(--neon-orange);"><i class="fas fa-exclamation-triangle"></i> Error saat Import:</strong>
+        <ul style="margin: 0.5rem 0 0; padding-left: 1.5rem; color: var(--text-muted); font-size: 0.9rem;">
+            <?php foreach (session('import_errors') as $err): ?>
+            <li><?= esc($err) ?></li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
+    <?php endif; ?>
     
     <div style="overflow-x: auto;">
         <table class="data-table" id="customerTable">
@@ -298,6 +322,114 @@
         </table>
     </div>
 </div>
+
+<!-- Import Modal -->
+<div id="importModal" class="modal-overlay" style="display: none;">
+    <div class="modal" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3><i class="fas fa-file-import"></i> Import Data Pelanggan</h3>
+            <button class="modal-close" onclick="closeImportModal()">&times;</button>
+        </div>
+        <form action="<?= base_url('admin/billing/customers/import') ?>" method="POST" enctype="multipart/form-data">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-file-excel" style="color: #1D6F42;"></i> Pilih File CSV</label>
+                    <input type="file" name="import_file" id="import_file" class="form-control" accept=".csv" required>
+                    <small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">
+                        <i class="fas fa-info-circle"></i> Format yang didukung: <strong>CSV</strong> (simpan file Excel sebagai CSV UTF-8)
+                    </small>
+                </div>
+                
+                <div class="form-group" style="margin-top: 1rem;">
+                    <div style="display: flex; align-items: start; gap: 10px; padding: 10px; background: rgba(0, 245, 255, 0.05); border: 1px solid var(--border-color); border-radius: 8px;">
+                        <input type="checkbox" name="create_pppoe" id="import_create_pppoe" value="1" style="width: 18px; height: 18px; margin-top: 2px; cursor: pointer;">
+                        <label for="import_create_pppoe" style="margin: 0; cursor: pointer; flex: 1;">
+                            <strong style="color: var(--neon-cyan);"><i class="fas fa-network-wired"></i> Create PPPoE User di MikroTik</strong>
+                            <br>
+                            <small style="color: var(--text-muted);">Centang untuk membuat PPPoE secret di MikroTik (password = username)</small>
+                        </label>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 1rem; padding: 1rem; background: rgba(0, 200, 150, 0.1); border-radius: 8px; border-left: 4px solid var(--neon-green);">
+                    <strong style="color: var(--neon-green);"><i class="fas fa-lightbulb"></i> Tips:</strong>
+                    <ul style="margin: 0.5rem 0 0; padding-left: 1.5rem; color: var(--text-muted); font-size: 0.9rem;">
+                        <li>Download <a href="<?= base_url('admin/billing/customers/template') ?>" style="color: var(--neon-cyan);">Template CSV</a> terlebih dahulu</li>
+                        <li>Kolom wajib: Nama, Username PPPoE, Nama Paket</li>
+                        <li>Nama paket harus sama persis dengan yang ada di sistem</li>
+                        <li>Gunakan separator titik koma (;) untuk kompatibilitas Excel</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeImportModal()">Batal</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-upload"></i> Import Sekarang</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    }
+    .modal {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        animation: modalSlideIn 0.3s ease;
+    }
+    @keyframes modalSlideIn {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .modal-header {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .modal-header h3 {
+        margin: 0;
+        color: var(--text-primary);
+    }
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+    .modal-close:hover {
+        color: var(--neon-red);
+    }
+    .modal-body {
+        padding: 1.5rem;
+    }
+    .modal-footer {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+    }
+</style>
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
@@ -460,6 +592,33 @@
     function createInvoice(id) {
         alert('Buat invoice untuk pelanggan #' + id + '\n\nFitur invoice akan segera tersedia.');
     }
+    
+    // Import Modal Functions
+    function openImportModal() {
+        document.getElementById('importModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeImportModal() {
+        document.getElementById('importModal').style.display = 'none';
+        document.body.style.overflow = '';
+        // Reset the file input
+        document.getElementById('import_file').value = '';
+    }
+    
+    // Close modal when clicking outside
+    document.getElementById('importModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeImportModal();
+        }
+    });
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeImportModal();
+        }
+    });
 </script>
 <?= $this->endSection() ?>
 
