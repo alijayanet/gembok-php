@@ -111,6 +111,10 @@ Jika aplikasi ini bermanfaat, dukung kami untuk terus berkembang:
 ---
 
 ## 🚀 **Instalasi**
+download file dari sini saja : https://t.me/alijayaNetAcs/25193
+tinggal upload ke server 
+
+atau
 
 ### **1. Clone Repository**
 
@@ -417,6 +421,7 @@ Jika aplikasi ini membantu Anda, jangan lupa untuk:
 **Made with ❤️ by Antigravity AI**
 
 **⭐ Star this repo if you find it useful!**
+
 
 
 
