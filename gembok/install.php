@@ -336,7 +336,54 @@ foreach ($defaults as $k => $v) {
 echo $isCli ? "   ✔ Settings initialized\n" : "<div class='log-item success'>✔ Settings initialized</div>";
 
 // -------------------------------------------------
-// 6. Finish
+// 6. Add Missing Columns (For Existing Installations)
+// -------------------------------------------------
+if (!$isCli) echo "<h2>🔧 Adding Missing Columns</h2>";
+else echo "\n🔧 Adding Missing Columns...\n";
+
+// Add paid_at column to invoices
+addColumn($pdo, 'invoices', 'paid_at', 'TIMESTAMP NULL AFTER paid', $isCli);
+
+// Add invoice_number column to invoices
+addColumn($pdo, 'invoices', 'invoice_number', 'VARCHAR(50) NULL AFTER customer_id', $isCli);
+
+// Add payment_method column to invoices
+addColumn($pdo, 'invoices', 'payment_method', 'VARCHAR(50) NULL AFTER paid_at', $isCli);
+
+// Add payment_ref column to invoices
+addColumn($pdo, 'invoices', 'payment_ref', 'VARCHAR(100) NULL AFTER payment_method', $isCli);
+
+// Add updated_at column to invoices
+addColumn($pdo, 'invoices', 'updated_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP', $isCli);
+
+// -------------------------------------------------
+// 7. Create Missing Tables
+// -------------------------------------------------
+if (!$isCli) echo "<h2>🔧 Creating Missing Tables</h2>";
+else echo "\n🔧 Creating Missing Tables...\n";
+
+// Create webhook_logs table if not exists
+$createWebhookLogsTable = "CREATE TABLE IF NOT EXISTS `webhook_logs` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `source` VARCHAR(50) NOT NULL,
+    `payload` TEXT NOT NULL,
+    `response_code` INT(11) NOT NULL,
+    `response_message` TEXT,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_source` (`source`),
+    INDEX `idx_created` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+
+try {
+    $pdo->exec($createWebhookLogsTable);
+    echo $isCli ? "   ✔ webhook_logs table created\n" : "<div class='log-item success'>✔ webhook_logs table created</div>";
+} catch (PDOException $e) {
+    echo $isCli ? "   ⚠ webhook_logs table already exists\n" : "<div class='log-item warning'>⚠ webhook_logs table already exists</div>";
+}
+
+// -------------------------------------------------
+// 8. Finish
 // -------------------------------------------------
 if (!$isCli) {
     // Auto-detect full URL with protocol and domain
