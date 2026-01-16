@@ -92,7 +92,7 @@
             <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
                 Pastikan tidak ada aktivitas penting yang sedang berjalan sebelum melakukan update.
             </p>
-            <a href="/gembok/update.php" class="btn btn-primary" style="padding: 1rem 2rem; font-size: 1rem;">
+            <a href="<?= base_url('update.php') ?>" class="btn btn-primary" style="padding: 1rem 2rem; font-size: 1rem;">
                 <i class="fas fa-download"></i> Mulai Update Sekarang
             </a>
             <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 1rem;">
