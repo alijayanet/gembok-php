@@ -16,6 +16,9 @@ class Admin extends BaseController
         $mikrotik = new MikrotikService();
         $genie = new GenieacsService();
         
+        // Auto-run cron jobs when admin visits dashboard (poor man's cron)
+        $this->autoRunCronJobs($db);
+        
         // 1. Total Devices (GenieACS)
         try {
             // Try to get real count from API
@@ -841,6 +844,80 @@ class Admin extends BaseController
             'success' => true,
             'redirect' => base_url('update.php')
         ]);
+    }
+    
+    /**
+     * Auto-run cron jobs when admin visits dashboard (poor man's cron)
+     * This eliminates the need for server-side cron job setup
+     */
+    private function autoRunCronJobs($db)
+    {
+        // Get last run times from settings
+        $lastIsolationRun = $db->table('settings')->where('key', 'last_isolation_run')->get()->getRowArray();
+        $lastInvoiceRun = $db->table('settings')->where('key', 'last_invoice_run')->get()->getRowArray();
+        
+        $lastIsolationTime = $lastIsolationRun ? strtotime($lastIsolationRun['value']) : 0;
+        $lastInvoiceTime = $lastInvoiceRun ? strtotime($lastInvoiceRun['value']) : 0;
+        
+        $now = time();
+        $today = date('Y-m-d');
+        
+        // Check if isolation should run (daily)
+        // Run if: never run before OR last run was yesterday or earlier
+        $shouldRunIsolation = ($lastIsolationTime === 0) || (date('Y-m-d', $lastIsolationTime) < $today);
+        
+        // Check if invoice generation should run (monthly on 1st)
+        // Run if: never run before OR last run was in a different month AND today is 1st
+        $shouldRunInvoice = false;
+        if (date('j') == 1) { // Today is 1st of month
+            if ($lastInvoiceTime === 0) {
+                $shouldRunInvoice = true;
+            } else {
+                $lastRunMonth = date('Y-m', $lastInvoiceTime);
+                $currentMonth = date('Y-m');
+                $shouldRunInvoice = ($lastRunMonth < $currentMonth);
+            }
+        }
+        
+        // Run isolation check if needed
+        if ($shouldRunIsolation) {
+            try {
+                $billing = new \App\Controllers\Billing();
+                $billing->checkIsolation();
+                
+                // Update last run time
+                $db->table('settings')->replace([
+                    'key' => 'last_isolation_run',
+                    'value' => date('Y-m-d H:i:s'),
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'updated_at' => date('Y-m-d H:i:s')
+                ]);
+                
+                log_message('info', 'Auto-cron: Isolation check completed');
+            } catch (\Exception $e) {
+                log_message('error', 'Auto-cron: Isolation check failed - ' . $e->getMessage());
+            }
+        }
+        
+        // Run invoice generation if needed
+        if ($shouldRunInvoice) {
+            try {
+                $billing = new \App\Controllers\Billing();
+                $billing->generateInvoices();
+                
+                // Update last run time
+                $db->table('settings')->replace([
+                    'key' => 'last_invoice_run',
+                    'value' => date('Y-m-d H:i:s'),
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'updated_at' => date('Y-m-d H:i:s')
+                ]);
+                
+                log_message('info', 'Auto-cron: Invoice generation completed');
+            } catch (\Exception $e) {
+                log_message('error', 'Auto-cron: Invoice generation failed - ' . $e->getMessage());
+            }
+        }
     }
 }
 

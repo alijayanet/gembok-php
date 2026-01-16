@@ -120,6 +120,9 @@ $routes->group('admin', ['filter' => 'admin'], function($routes) {
     // Telegram webhook management
     $routes->post('settings/setTelegramWebhook', 'AdminSettings::setTelegramWebhook');
     $routes->post('settings/deleteTelegramWebhook', 'AdminSettings::deleteTelegramWebhook');
+    // Cron job management (manual trigger)
+    $routes->get('settings/run-isolation', 'AdminSettings::runIsolation');
+    $routes->get('settings/generate-invoices', 'AdminSettings::generateInvoices');
     
     // System Update
     $routes->get('update', 'Admin::update');
