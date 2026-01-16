@@ -305,11 +305,28 @@ function runDatabaseMigrations($isCli) {
     
     // Check if install.php exists
     $installFile = UPDATE_DIR . '/install.php';
+    
+    // Check if vendor directory exists (required by install.php)
+    $vendorDir = UPDATE_DIR . '/vendor';
+    if (!file_exists($vendorDir)) {
+        logMessage("⚠️ Vendor directory tidak ditemukan, skip database migrations", 'warning', $isCli);
+        logMessage("   Jalankan 'composer install' untuk menginstall dependencies jika diperlukan", 'info', $isCli);
+        return false;
+    }
+    
     if (file_exists($installFile)) {
+        // Change to the correct directory before including install.php
+        // This ensures __DIR__ in install.php points to the correct location
+        $originalDir = getcwd();
+        chdir(UPDATE_DIR);
+        
         // Run install.php in silent mode
         ob_start();
         include $installFile;
         ob_end_clean();
+        
+        // Restore original directory
+        chdir($originalDir);
         
         logMessage("Database migrations selesai", 'success', $isCli);
         return true;
