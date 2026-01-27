@@ -352,6 +352,7 @@ class Admin extends BaseController
 
         // Get customer details
         $customerId = $this->request->getPost('customer_id');
+        $assignedTo = $this->request->getPost('assigned_to');
         $customer = $db->table('customers')->where('id', $customerId)->get()->getRowArray();
 
         $data = [
@@ -360,40 +361,60 @@ class Admin extends BaseController
             'customer_phone' => $customer['phone'] ?? '',
             'description' => $this->request->getPost('description'),
             'priority' => $this->request->getPost('priority'),
-            'status' => 'pending',
+            'assigned_to' => !empty($assignedTo) ? $assignedTo : null,
+            'status' => !empty($assignedTo) ? 'in_progress' : 'pending',
             'created_at' => date('Y-m-d H:i:s')
         ];
 
         $db->table('trouble_tickets')->insert($data);
         $newTicketId = $db->insertID();
 
-        // Broadcast to All Technicians (Notify them about new report)
+        // Notification Logic
         try {
-            $technicians = $db->table('users')->where('role', 'technician')->get()->getResultArray();
-            if (!empty($technicians)) {
-                $ws = new \App\Services\WhatsappService();
+            $ws = new \App\Services\WhatsappService();
+            
+            if (!empty($assignedTo)) {
+                // PERSONAL NOTIFICATION to Assigned Technician
+                $technician = $db->table('users')->where('id', $assignedTo)->get()->getRowArray();
+                if ($technician && !empty($technician['phone'])) {
+                    $msg = "*TUGAS BARU (TIKET GANGGUAN)*\n\n";
+                    $msg .= "Halo {$technician['name']},\n";
+                    $msg .= "Admin telah memberikan tugas baru kepada Anda:\n\n";
+                    $msg .= "--------------------------------\n";
+                    $msg .= "ID Tiket : #{$newTicketId}\n";
+                    $msg .= "Pelanggan : " . ($customer['name'] ?? 'N/A') . "\n";
+                    $msg .= "Alamat : " . ($customer['address'] ?? '-') . "\n";
+                    $msg .= "Keluhan : " . $this->request->getPost('description') . "\n";
+                    $msg .= "Prioritas : " . strtoupper($this->request->getPost('priority')) . "\n";
+                    $msg .= "--------------------------------\n\n";
+                    $msg .= "Silakan cek dashboard untuk detail lebih lanjut.";
+                    
+                    $ws->sendMessage($technician['phone'], $msg);
+                }
+            } else {
+                // BROADCAST to All Technicians (Notify them about new report without technician)
+                $technicians = $db->table('users')->where('role', 'technician')->get()->getResultArray();
                 foreach ($technicians as $tech) {
                     if (!empty($tech['phone'])) {
-                        $msg = "*LAPORAN GANGGUAN BARU (BY ADMIN)*\n\n";
+                        $msg = "*LAPORAN GANGGUAN BARU*\n\n";
                         $msg .= "Halo {$tech['name']},\n";
-                        $msg .= "Admin telah membuat laporan gangguan baru:\n\n";
+                        $msg .= "Ada laporan gangguan baru (Belum ada teknisi):\n\n";
                         $msg .= "--------------------------------\n";
                         $msg .= "ID Tiket : #{$newTicketId}\n";
                         $msg .= "Pelanggan : " . ($customer['name'] ?? 'N/A') . "\n";
                         $msg .= "Keluhan : " . $this->request->getPost('description') . "\n";
-                        $msg .= "Prioritas : " . strtoupper($this->request->getPost('priority')) . "\n";
                         $msg .= "--------------------------------\n\n";
-                        $msg .= "Mohon segera diproses.";
+                        $msg .= "Mohon koordinasi dengan admin.";
                         
                         $ws->sendMessage($tech['phone'], $msg);
                     }
                 }
             }
         } catch (\Exception $e) {
-            log_message('error', 'Failed to broadcast admin ticket: ' . $e->getMessage());
+            log_message('error', 'Failed to send ticket notification: ' . $e->getMessage());
         }
         
-        session()->setFlashdata('msg', '✅ Tiket berhasil dibuat');
+        session()->setFlashdata('msg', '✅ Tiket berhasil dibuat' . (!empty($assignedTo) ? ' & Ditugaskan' : ''));
         return redirect()->to('/admin/trouble');
     }
 
