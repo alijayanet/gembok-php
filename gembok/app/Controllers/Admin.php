@@ -426,7 +426,6 @@ class Admin extends BaseController
         $db = \Config\Database::connect();
         
         $data = [
-            'title' => $this->request->getPost('title'),
             'description' => $this->request->getPost('description'),
             'priority' => $this->request->getPost('priority'),
             'notes' => $this->request->getPost('notes'),
