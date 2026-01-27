@@ -888,8 +888,15 @@
         </div>
         
         <nav class="sidebar-menu">
+            <?php $role = session()->get('admin_role'); ?>
             <div class="menu-section">Main Menu</div>
             
+            <?php if ($role === 'technician'): ?>
+            <a href="<?= base_url('admin/technician/dashboard') ?>" class="menu-item <?= uri_string() === 'admin/technician/dashboard' ? 'active' : '' ?>">
+                <i class="fas fa-home menu-icon"></i>
+                <span class="menu-text">Tugas Saya</span>
+            </a>
+            <?php else: ?>
             <a href="<?= base_url('admin') ?>" class="menu-item <?= uri_string() === 'admin' || uri_string() === 'admin/dashboard' ? 'active' : '' ?>">
                 <i class="fas fa-home menu-icon"></i>
                 <span class="menu-text">Dashboard</span>
@@ -899,20 +906,26 @@
                 <i class="fas fa-chart-line menu-icon"></i>
                 <span class="menu-text">Analytics</span>
             </a>
+            <?php endif; ?>
             
             <div class="menu-section">Device Management</div>
             
-            <a href="<?= base_url('admin/genieacs') ?>" class="menu-item <?= uri_string() === 'admin/genieacs' ? 'active' : '' ?>">
+            <?php 
+            $genieUrl = ($role === 'technician') ? 'admin/technician/genieacs' : 'admin/genieacs';
+            $mapUrl = ($role === 'technician') ? 'admin/technician/map' : 'admin/map';
+            ?>
+
+            <a href="<?= base_url($genieUrl) ?>" class="menu-item <?= uri_string() === $genieUrl ? 'active' : '' ?>">
                 <i class="fas fa-server menu-icon"></i>
                 <span class="menu-text">GenieACS</span>
             </a>
             
-            <a href="<?= base_url('admin/map') ?>" class="menu-item <?= uri_string() === 'admin/map' ? 'active' : '' ?>">
+            <a href="<?= base_url($mapUrl) ?>" class="menu-item <?= uri_string() === $mapUrl ? 'active' : '' ?>">
                 <i class="fas fa-map-marked-alt menu-icon"></i>
                 <span class="menu-text">Map Monitoring</span>
             </a>
             
-
+            <?php if ($role === 'admin'): ?>
             <div class="menu-section">MikroTik</div>
             
             <a href="<?= base_url('admin/mikrotik') ?>" class="menu-item <?= uri_string() === 'admin/mikrotik' ? 'active' : '' ?>">
@@ -939,11 +952,30 @@
                 <i class="fas fa-ticket-alt menu-icon"></i>
                 <span class="menu-text">Voucher</span>
             </a>
+            <?php endif; ?>
             
             <div class="menu-section">Billing & Support</div>
             
+            <?php if ($role === 'technician'): ?>
+            <a href="<?= base_url('admin/technician/dashboard') ?>" class="menu-item <?= uri_string() === 'admin/technician/dashboard' ? 'active' : '' ?>">
+                <i class="fas fa-tools menu-icon"></i>
+                <span class="menu-text">Tiket Laporan</span>
+            </a>
+            <?php else: ?>
+            <a href="<?= base_url('admin/trouble') ?>" class="menu-item <?= uri_string() === 'admin/trouble' ? 'active' : '' ?>">
+                <i class="fas fa-tools menu-icon"></i>
+                <span class="menu-text">Tiket Gangguan</span>
+            </a>
+
+            <a href="<?= base_url('admin/technicians') ?>" class="menu-item <?= uri_string() === 'admin/technicians' ? 'active' : '' ?>">
+                <i class="fas fa-user-shield menu-icon"></i>
+                <span class="menu-text">Manajemen Teknisi</span>
+            </a>
+            <?php endif; ?>
             
+            <?php if ($role === 'admin'): ?>
             <div class="menu-item menu-item-parent <?= strpos(uri_string(), 'billing') !== false ? 'open' : '' ?>" onclick="toggleSubmenu(this)">
+
                 <i class="fas fa-file-invoice-dollar menu-icon"></i>
                 <span class="menu-text">Billing</span>
                 <i class="fas fa-chevron-right menu-arrow"></i>
@@ -963,7 +995,6 @@
                 </a>
             </div>
             
-
             <div class="menu-section">System</div>
             
             <a href="<?= base_url('admin/setting') ?>" class="menu-item <?= uri_string() === 'admin/setting' || uri_string() === 'admin/settings' ? 'active' : '' ?>">
@@ -976,6 +1007,7 @@
                 <span class="menu-text">Update</span>
                 <span class="menu-badge" style="background: var(--neon-green); color: var(--bg-primary);">New</span>
             </a>
+            <?php endif; ?>
         </nav>
         
         <div class="sidebar-footer">

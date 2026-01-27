@@ -616,6 +616,22 @@
             <?php endif; ?>
         </div>
         
+        <!-- Lapor Gangguan Section -->
+        <div class="section" id="trouble-section">
+            <div class="section-title">
+                <i class="fas fa-tools"></i>
+                Lapor Gangguan
+            </div>
+            <div class="form-group">
+                <label class="form-label">Deskripsi Masalah</label>
+                <textarea id="trouble-desc" class="form-control" rows="3" placeholder="Contoh: Lampu LOS merah, Internet Lambat, dll..."></textarea>
+            </div>
+            <button type="button" class="btn" onclick="submitTrouble()" id="trouble-btn" style="background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);">
+                <i class="fas fa-paper-plane"></i>
+                Kirim Laporan
+            </button>
+        </div>
+
         <!-- Account Settings -->
         <div class="section" id="account-section">
             <div class="section-title">
@@ -778,6 +794,44 @@
                 passBtn.disabled = false;
                 passBtn.innerHTML = '<i class="fas fa-key"></i> Simpan Password Baru';
         }
+        }
+        async function submitTrouble() {
+            const descInput = document.getElementById('trouble-desc');
+            const troubleBtn = document.getElementById('trouble-btn');
+            const desc = descInput.value.trim();
+            
+            if (desc.length === 0) {
+                showAlert('error', 'Silakan isi deskripsi masalah');
+                return;
+            }
+            
+            troubleBtn.disabled = true;
+            troubleBtn.innerHTML = '<i class="fas fa-spinner spinner"></i> Mengirim...';
+            
+            try {
+                const response = await fetch('<?= base_url('portal/reportTrouble') ?>', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: 'description=' + encodeURIComponent(desc)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert('success', result.message);
+                    descInput.value = '';
+                } else {
+                    showAlert('error', result.message);
+                }
+            } catch (error) {
+                showAlert('error', 'Terjadi kesalahan: ' + error.message);
+            } finally {
+                troubleBtn.disabled = false;
+                troubleBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Kirim Laporan';
+            }
         }
     </script>
     

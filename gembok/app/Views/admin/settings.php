@@ -433,56 +433,6 @@
     </div>
 </div>
 
-<!-- Cron Job Management -->
-<h2 style="color: var(--text-primary); margin-bottom: 1rem; margin-top: 2rem; font-size: 1.25rem;">
-    <i class="fas fa-clock"></i> Cron Job Management
-</h3>
-<div class="card" style="border-left: 4px solid var(--neon-orange);">
-    <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-tasks" style="color: var(--neon-orange);"></i> Manual Trigger</h3>
-    </div>
-    <div style="padding: 1.5rem;">
-        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
-            Jalankan cron job secara manual tanpa perlu setup di server. Gunakan untuk testing atau eksekusi segera.
-        </p>
-        
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
-            <!-- Run Isolation -->
-            <div style="background: rgba(255, 107, 53, 0.05); border: 1px solid rgba(255, 107, 53, 0.3); border-radius: 12px; padding: 1.5rem;">
-                <h4 style="margin-bottom: 0.75rem; color: var(--neon-orange);">
-                    <i class="fas fa-user-lock"></i> Cek & Isolir Pelanggan
-                </h4>
-                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
-                    Cek invoice overdue dan isolir pelanggan yang belum bayar.
-                </p>
-                <a href="<?= base_url('admin/settings/run-isolation') ?>" class="btn btn-warning" style="width: 100%; text-align: center;">
-                    <i class="fas fa-play"></i> Jalankan Isolir
-                </a>
-            </div>
-            
-            <!-- Generate Invoices -->
-            <div style="background: rgba(0, 245, 255, 0.05); border: 1px solid rgba(0, 245, 255, 0.3); border-radius: 12px; padding: 1.5rem;">
-                <h4 style="margin-bottom: 0.75rem; color: var(--neon-cyan);">
-                    <i class="fas fa-file-invoice-dollar"></i> Generate Invoice Bulanan
-                </h4>
-                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
-                    Generate invoice untuk semua pelanggan aktif.
-                </p>
-                <a href="<?= base_url('admin/settings/generate-invoices') ?>" class="btn btn-primary" style="width: 100%; text-align: center;">
-                    <i class="fas fa-plus"></i> Generate Invoice
-                </a>
-            </div>
-        </div>
-        
-        <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(255, 255, 0, 0.05); border: 1px solid rgba(255, 255, 0, 0.3); border-radius: 8px;">
-            <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">
-                <i class="fas fa-info-circle" style="color: var(--neon-yellow);"></i>
-                <strong>Info:</strong> Cron job juga bisa di-setup otomatis di server (cPanel/Cron Jobs) untuk eksekusi harian. Lihat dokumentasi untuk detail setup.
-            </p>
-        </div>
-    </div>
-</div>
-
 <style>
 .webhook-item {
     margin-bottom: 1.5rem;
