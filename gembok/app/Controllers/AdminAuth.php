@@ -40,18 +40,19 @@ class AdminAuth extends BaseController
             return redirect()->back()->with('error', 'Username dan password wajib diisi.');
         }
         
-        // Find user in database - check username and role (admin or superadmin)
+        // Find user in database - check username and role (admin, superadmin, or technician)
         $user = $db->table('users')
                    ->where('username', $username)
                    ->groupStart()
                        ->where('role', 'admin')
                        ->orWhere('role', 'superadmin')
+                       ->orWhere('role', 'technician')
                    ->groupEnd()
                    ->get()
                    ->getRowArray();
         
         if (!$user) {
-            return redirect()->back()->with('error', 'Username tidak ditemukan atau bukan admin.');
+            return redirect()->back()->with('error', 'Username tidak ditemukan atau Anda tidak memiliki akses admin/teknisi.');
         }
         
         // Verify password
@@ -78,8 +79,11 @@ class AdminAuth extends BaseController
            ->where('id', $user['id'])
            ->update(['last_login' => date('Y-m-d H:i:s')]);
         
+        // Determine default dashboard based on role
+        $defaultDashboard = ($user['role'] === 'technician') ? '/admin/technician/dashboard' : '/admin';
+        
         // Redirect to intended URL or dashboard
-        $redirectUrl = $session->get('admin_redirect_url') ?? '/admin';
+        $redirectUrl = $session->get('admin_redirect_url') ?? $defaultDashboard;
         $session->remove('admin_redirect_url');
         
         return redirect()->to($redirectUrl)->with('success', 'Selamat datang, ' . $user['name'] . '!');
