@@ -498,13 +498,37 @@ class Admin extends BaseController
         $data = [
             'status' => 'resolved',
             'resolved_at' => date('Y-m-d H:i:s'),
-            'resolution_notes' => $this->request->getPost('resolution_notes'),
+            'resolution_notes' => $this->request->getPost('resolution_notes') ?? 'Diselesaikan oleh Admin',
             'updated_at' => date('Y-m-d H:i:s')
         ];
 
         $db->table('trouble_tickets')->where('id', $id)->update($data);
+
+        // Notify Customer
+        try {
+            $ticket = $db->table('trouble_tickets')
+                ->select('trouble_tickets.*, customers.name as customer_name, customers.phone as customer_phone')
+                ->join('customers', 'customers.id = trouble_tickets.customer_id', 'left')
+                ->where('trouble_tickets.id', $id)
+                ->get()->getRowArray();
+            
+            if ($ticket && !empty($ticket['customer_phone'])) {
+                $ws = new \App\Services\WhatsappService();
+                $msg = "*LAPORAN SELESAI*\n\n";
+                $msg .= "Yth. {$ticket['customer_name']},\n";
+                $msg .= "Laporan gangguan Anda dengan ID #{$id} telah ditandai sebagai *SELESAI* oleh Admin.\n\n";
+                $msg .= "--------------------------------\n";
+                $msg .= "Keterangan: " . $data['resolution_notes'] . "\n";
+                $msg .= "--------------------------------\n\n";
+                $msg .= "Terima kasih telah menggunakan layanan kami.";
+                
+                $ws->sendMessage($ticket['customer_phone'], $msg);
+            }
+        } catch (\Exception $e) {
+            log_message('error', 'Failed to send admin resolution notify: ' . $e->getMessage());
+        }
         
-        session()->setFlashdata('msg', '✅ Tiket berhasil ditutup');
+        session()->setFlashdata('msg', '✅ Tiket berhasil ditutup & Notifikasi terkirim');
         return redirect()->to('/admin/trouble');
     }
 
