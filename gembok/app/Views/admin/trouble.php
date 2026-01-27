@@ -66,72 +66,81 @@
         </div>
     </div>
     
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Pelanggan</th>
-                <th>Masalah</th>
-                <th>Teknisi</th>
-                <th>Status</th>
-                <th>Prioritas</th>
-                <th>Tanggal</th>
-                <th>Aksi</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php if (empty($tickets)): ?>
-            <tr>
-                <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">
-                    <i class="fas fa-check-circle" style="font-size: 2rem; margin-bottom: 1rem; display: block; color: var(--neon-green);"></i>
-                    Tidak ada laporan gangguan
-                </td>
-            </tr>
-            <?php else: ?>
-                <?php foreach ($tickets as $ticket): ?>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
                 <tr>
-                    <td>#<?= esc($ticket['id'] ?? '0') ?></td>
-                    <td><?= esc($ticket['customer_name'] ?? 'N/A') ?></td>
-                    <td><?= esc(substr($ticket['description'] ?? '', 0, 50)) ?>...</td>
-                    <td>
-                        <span style="color: var(--neon-cyan);">
-                            <i class="fas fa-user-cog"></i> <?= esc($ticket['technician_name'] ?? 'Belum ditugaskan') ?>
-                        </span>
-                    </td>
-                    <td>
-                        <?php
-                        $statusClass = 'badge-warning';
-                        if (($ticket['status'] ?? '') === 'resolved') $statusClass = 'badge-success';
-                        if (($ticket['status'] ?? '') === 'in_progress') $statusClass = 'badge-info';
-                        ?>
-                        <span class="badge <?= $statusClass ?>"><?= esc(ucfirst($ticket['status'] ?? 'pending')) ?></span>
-                    </td>
-                    <td>
-                        <?php
-                        $priorityClass = 'badge-info';
-                        if (($ticket['priority'] ?? '') === 'high') $priorityClass = 'badge-danger';
-                        if (($ticket['priority'] ?? '') === 'medium') $priorityClass = 'badge-warning';
-                        ?>
-                        <span class="badge <?= $priorityClass ?>"><?= esc(ucfirst($ticket['priority'] ?? 'low')) ?></span>
-                    </td>
-                    <td><?= date('d M Y', strtotime($ticket['created_at'] ?? 'now')) ?></td>
-                    <td>
-                        <div style="display: flex; gap: 0.25rem;">
-                            <button class="btn btn-secondary btn-sm" onclick="showAssignModal(<?= $ticket['id'] ?>, '<?= esc($ticket['assigned_to'] ?? '') ?>')" title="Tugaskan Teknisi">
-                                <i class="fas fa-user-plus"></i>
-                            </button>
-                            <?php if ($ticket['status'] !== 'resolved'): ?>
-                            <button class="btn btn-secondary btn-sm" onclick="resolveTicket(<?= $ticket['id'] ?? 0 ?>)" title="Selesai">
-                                <i class="fas fa-check"></i>
-                            </button>
-                            <?php endif; ?>
-                        </div>
+                    <th>ID</th>
+                    <th>Pelanggan</th>
+                    <th>Masalah</th>
+                    <th>Teknisi</th>
+                    <th>Status</th>
+                    <th>Prioritas</th>
+                    <th>Tanggal</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($tickets)): ?>
+                <tr>
+                    <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                        <i class="fas fa-check-circle" style="font-size: 2rem; margin-bottom: 1rem; display: block; color: var(--neon-green);"></i>
+                        Tidak ada laporan gangguan
                     </td>
                 </tr>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </tbody>
-    </table>
+                <?php else: ?>
+                    <?php foreach ($tickets as $ticket): ?>
+                    <tr>
+                        <td>#<?= esc($ticket['id'] ?? '0') ?></td>
+                        <td><?= esc($ticket['customer_name'] ?? 'N/A') ?></td>
+                        <td><?= esc(substr($ticket['description'] ?? '', 0, 50)) ?>...</td>
+                        <td>
+                            <span style="color: var(--neon-cyan);">
+                                <i class="fas fa-user-cog"></i> <?= esc($ticket['technician_name'] ?? 'Belum ditugaskan') ?>
+                            </span>
+                        </td>
+                        <td>
+                            <?php 
+                            $status = $ticket['status'] ?? 'pending';
+                            $badge = match($status) {
+                                'pending' => 'badge-danger',
+                                'in_progress' => 'badge-warning',
+                                'resolved' => 'badge-success',
+                                default => 'badge-info'
+                            };
+                            ?>
+                            <span class="badge <?= $badge ?>"><?= strtoupper($status) ?></span>
+                        </td>
+                        <td>
+                            <?php 
+                            $prio = $ticket['priority'] ?? 'low';
+                            $prioStyle = match($prio) {
+                                'high' => 'color: var(--neon-pink)',
+                                'medium' => 'color: var(--neon-orange)',
+                                default => 'color: var(--text-secondary)'
+                            };
+                            ?>
+                            <span style="<?= $prioStyle ?>; font-weight: 500;"><?= strtoupper($prio) ?></span>
+                        </td>
+                        <td><?= date('d M Y H:i', strtotime($ticket['created_at'] ?? '')) ?></td>
+                        <td>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <?php if ($status !== 'resolved'): ?>
+                                    <button class="btn btn-sm btn-primary" onclick="showAssignModal(<?= $ticket['id'] ?>, '<?= esc($ticket['assigned_to'] ?? '') ?>')" title="Tugaskan Teknisi">
+                                        <i class="fas fa-user-check"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-success" onclick="resolveTicket(<?= $ticket['id'] ?>)" title="Tandai Selesai">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <!-- Modal Tambah Tiket -->
