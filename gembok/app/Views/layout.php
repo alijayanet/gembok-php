@@ -1143,10 +1143,17 @@
             <i class="fas fa-users"></i>
             <span>Pelanggan</span>
         </a>
+        <?php if (session()->get('admin_role') === 'technician'): ?>
+        <a href="<?= base_url('admin/trouble') ?>" class="nav-item <?= strpos(uri_string(), 'admin/trouble') !== false ? 'active' : '' ?>">
+            <i class="fas fa-tools"></i>
+            <span>Tiket</span>
+        </a>
+        <?php else: ?>
         <a href="<?= base_url('admin/billing/invoices') ?>" class="nav-item <?= strpos(uri_string(), 'billing/invoices') !== false ? 'active' : '' ?>">
             <i class="fas fa-file-invoice-dollar"></i>
             <span>Tagihan</span>
         </a>
+        <?php endif; ?>
         <a href="<?= base_url('admin/map') ?>" class="nav-item <?= strpos(uri_string(), 'map') !== false ? 'active' : '' ?>">
             <i class="fas fa-map-marked-alt"></i>
             <span>Map</span>
