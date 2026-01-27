@@ -12,6 +12,10 @@
         <i class="fas fa-wifi"></i>
         <span>WiFi</span>
     </a>
+    <a href="<?= base_url('portal/dashboard') ?>" class="nav-item" onclick="scrollToTroubleSection(event)">
+        <i class="fas fa-tools"></i>
+        <span>Lapor</span>
+    </a>
     <a href="<?= base_url('portal/dashboard') ?>" class="nav-item" onclick="scrollToAccountSection(event)">
         <i class="fas fa-user-cog"></i>
         <span>Akun</span>
@@ -265,31 +269,19 @@
         }
     }
     
-    // Scroll to Account section function
-    function scrollToAccountSection(event) {
-        // Check if we're already on dashboard page
+    // Scroll to Trouble section function
+    function scrollToTroubleSection(event) {
         const currentPath = window.location.pathname;
-        
         if (currentPath.includes('portal/dashboard') || currentPath === '/portal' || currentPath.endsWith('portal')) {
-            // Already on dashboard, just scroll
             event.preventDefault();
-            
-            // Find Account Settings section
-            const accountSection = document.querySelector('#account-section') || 
-                                  document.querySelector('[id*="account"]');
-            
-            if (accountSection) {
-                accountSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            const troubleSection = document.querySelector('#trouble-section');
+            if (troubleSection) {
+                troubleSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
-            
-            // Update active state
-            document.querySelectorAll('.portal-mobile-bottom-nav .nav-item').forEach(item => {
-                item.classList.remove('active');
-            });
+            document.querySelectorAll('.portal-mobile-bottom-nav .nav-item').forEach(item => item.classList.remove('active'));
             event.currentTarget.classList.add('active');
         } else {
-            // Not on dashboard, redirect to dashboard with hash
-            window.location.href = event.currentTarget.getAttribute('href') + '#account';
+            window.location.href = event.currentTarget.getAttribute('href') + '#trouble';
         }
     }
     
@@ -302,7 +294,14 @@
                 if (wifiSection) {
                     wifiSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
-            }, 300); // Small delay to ensure page is fully loaded
+            }, 300);
+        } else if (hash === '#trouble' || hash === '#trouble-section') {
+            setTimeout(function() {
+                const troubleSection = document.querySelector('#trouble-section');
+                if (troubleSection) {
+                    troubleSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 300);
         } else if (hash === '#account' || hash === '#account-section') {
             setTimeout(function() {
                 const accountSection = document.querySelector('#account-section');
