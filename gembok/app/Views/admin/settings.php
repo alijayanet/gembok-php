@@ -6,7 +6,7 @@
 <?= $this->extend('layout') ?>
 
 <?= $this->section('title') ?>Pengaturan - Gembok Admin<?= $this->endSection() ?>
-<?= $this->section('page_title') ?>Pengaturan Sistem<?= $this->endSection() ?>
+<?= $this->section('page_title') ?><?= session()->get('admin_role') === 'technician' ? 'Pengaturan Saya' : 'Pengaturan Sistem' ?><?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
 <!-- Admin Profile & Security Section -->
@@ -14,21 +14,29 @@
     <!-- Profile Settings -->
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title"><i class="fas fa-user-shield" style="color: var(--neon-green);"></i> Profil Admin</h3>
+            <h3 class="card-title">
+                <i class="fas fa-user-shield" style="color: var(--neon-green);"></i> 
+                <?= session()->get('admin_role') === 'technician' ? 'Profil Teknisi' : 'Profil Admin' ?>
+            </h3>
         </div>
         <form action="<?= base_url('admin/settings/profile') ?>" method="post">
             <div class="form-group">
                 <label class="form-label">Username</label>
                 <input type="text" name="username" class="form-control" value="<?= esc($adminUser['username'] ?? '') ?>" required>
-                <small style="color: var(--text-muted)">Username untuk login admin panel</small>
+                <small style="color: var(--text-muted)">Username untuk login portal</small>
             </div>
             <div class="form-group">
                 <label class="form-label">Nama Lengkap</label>
                 <input type="text" name="name" class="form-control" value="<?= esc($adminUser['name'] ?? '') ?>" required>
             </div>
             <div class="form-group">
+                <label class="form-label">Nomor WhatsApp</label>
+                <input type="text" name="phone" class="form-control" value="<?= esc($adminUser['phone'] ?? '') ?>" placeholder="628123456789">
+                <small style="color: var(--text-muted)">Gunakan format internasional (contoh: 628123...)</small>
+            </div>
+            <div class="form-group">
                 <label class="form-label">Email (Opsional)</label>
-                <input type="email" name="email" class="form-control" value="<?= esc($adminUser['email'] ?? '') ?>" placeholder="admin@example.com">
+                <input type="email" name="email" class="form-control" value="<?= esc($adminUser['email'] ?? '') ?>" placeholder="user@example.com">
             </div>
             <button type="submit" class="btn btn-primary">
                 <i class="fas fa-save"></i> Simpan Profil
@@ -62,6 +70,7 @@
 </div>
 
 <!-- Integration Settings -->
+<?php if (session()->get('admin_role') === 'admin'): ?>
 <h2 style="color: var(--text-primary); margin-bottom: 1rem; font-size: 1.25rem;">
     <i class="fas fa-plug"></i> Integrasi & API
 </h2>
@@ -431,7 +440,7 @@
             </div>
         </div>
     </div>
-</div>
+<?php endif; ?>
 
 <style>
 .webhook-item {
