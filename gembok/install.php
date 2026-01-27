@@ -148,7 +148,7 @@ execQuery($pdo, "CREATE TABLE IF NOT EXISTS `users` (
     `password` VARCHAR(255) NOT NULL,
     `name` VARCHAR(100) NOT NULL,
     `email` VARCHAR(150) NULL,
-    `role` ENUM('admin','agent','customer') DEFAULT 'customer',
+    `role` ENUM('admin','agent','customer','technician') DEFAULT 'customer',
     `whatsapp_lid` VARCHAR(50) NULL,
     `is_active` BOOLEAN DEFAULT TRUE,
     `last_login` TIMESTAMP NULL,
@@ -268,7 +268,7 @@ execQuery($pdo, "CREATE TABLE IF NOT EXISTS `trouble_tickets` (
     `description` TEXT NOT NULL,
     `status` ENUM('pending','in_progress','resolved','closed') DEFAULT 'pending',
     `priority` ENUM('low','medium','high') DEFAULT 'low',
-    `assigned_to` VARCHAR(100) NULL,
+    `assigned_to` INT UNSIGNED NULL,
     `resolution_notes` TEXT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -287,6 +287,13 @@ addColumn($pdo, 'customers', 'isolation_date', 'INT DEFAULT 20', $isCli);
 addColumn($pdo, 'customers', 'lat', 'DECIMAL(10,8) NULL', $isCli);
 addColumn($pdo, 'customers', 'lng', 'DECIMAL(10,8) NULL', $isCli);
 addColumn($pdo, 'customers', 'portal_password', 'VARCHAR(255) NULL', $isCli); // New Password Column
+
+// Update role enum for users
+execQuery($pdo, "ALTER TABLE `users` MODIFY COLUMN `role` ENUM('admin','agent','customer','technician') DEFAULT 'customer'", "Updated `users` role enum to include `technician`", $isCli);
+
+// Update trouble_tickets assigned_to column type
+execQuery($pdo, "ALTER TABLE `trouble_tickets` MODIFY COLUMN `assigned_to` INT UNSIGNED NULL", "Updated `trouble_tickets.assigned_to` to INT UNSIGNED", $isCli);
+
 addColumn($pdo, 'invoices', 'updated_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP', $isCli);
 
 // Fix: Rename old column name to new standard
@@ -336,54 +343,7 @@ foreach ($defaults as $k => $v) {
 echo $isCli ? "   ✔ Settings initialized\n" : "<div class='log-item success'>✔ Settings initialized</div>";
 
 // -------------------------------------------------
-// 6. Add Missing Columns (For Existing Installations)
-// -------------------------------------------------
-if (!$isCli) echo "<h2>🔧 Adding Missing Columns</h2>";
-else echo "\n🔧 Adding Missing Columns...\n";
-
-// Add paid_at column to invoices
-addColumn($pdo, 'invoices', 'paid_at', 'TIMESTAMP NULL AFTER paid', $isCli);
-
-// Add invoice_number column to invoices
-addColumn($pdo, 'invoices', 'invoice_number', 'VARCHAR(50) NULL AFTER customer_id', $isCli);
-
-// Add payment_method column to invoices
-addColumn($pdo, 'invoices', 'payment_method', 'VARCHAR(50) NULL AFTER paid_at', $isCli);
-
-// Add payment_ref column to invoices
-addColumn($pdo, 'invoices', 'payment_ref', 'VARCHAR(100) NULL AFTER payment_method', $isCli);
-
-// Add updated_at column to invoices
-addColumn($pdo, 'invoices', 'updated_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP', $isCli);
-
-// -------------------------------------------------
-// 7. Create Missing Tables
-// -------------------------------------------------
-if (!$isCli) echo "<h2>🔧 Creating Missing Tables</h2>";
-else echo "\n🔧 Creating Missing Tables...\n";
-
-// Create webhook_logs table if not exists
-$createWebhookLogsTable = "CREATE TABLE IF NOT EXISTS `webhook_logs` (
-    `id` INT(11) NOT NULL AUTO_INCREMENT,
-    `source` VARCHAR(50) NOT NULL,
-    `payload` TEXT NOT NULL,
-    `response_code` INT(11) NOT NULL,
-    `response_message` TEXT,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    INDEX `idx_source` (`source`),
-    INDEX `idx_created` (`created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
-
-try {
-    $pdo->exec($createWebhookLogsTable);
-    echo $isCli ? "   ✔ webhook_logs table created\n" : "<div class='log-item success'>✔ webhook_logs table created</div>";
-} catch (PDOException $e) {
-    echo $isCli ? "   ⚠ webhook_logs table already exists\n" : "<div class='log-item warning'>⚠ webhook_logs table already exists</div>";
-}
-
-// -------------------------------------------------
-// 8. Finish
+// 6. Finish
 // -------------------------------------------------
 if (!$isCli) {
     // Auto-detect full URL with protocol and domain
