@@ -16,6 +16,8 @@ class AdminSettings extends BaseController
     /** Show settings form */
     public function index()
     {
+        $role = session()->get('admin_role');
+        
         $keys = [
             'WHATSAPP_API_URL',
             'WHATSAPP_TOKEN',
@@ -28,21 +30,18 @@ class AdminSettings extends BaseController
             'MIKROTIK_PORT',
             'MIKROTIK_USER',
             'MIKROTIK_PASS',
-            // Tripay Payment Gateway
             'TRIPAY_MERCHANT_CODE',
             'TRIPAY_API_KEY',
             'TRIPAY_PRIVATE_KEY',
-            'TRIPAY_MODE', // sandbox or production
-            // Midtrans Payment Gateway
+            'TRIPAY_MODE',
             'MIDTRANS_SERVER_KEY',
             'MIDTRANS_CLIENT_KEY',
-            'MIDTRANS_MODE', // sandbox or production
-            // Telegram Bot
+            'MIDTRANS_MODE',
             'TELEGRAM_BOT_TOKEN',
             'TELEGRAM_ADMIN_CHAT_IDS',
         ];
         
-        // Get current base URL for webhook URLs
+        // Get current base URL
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
         $baseUrl = "{$protocol}://{$host}";
@@ -60,17 +59,18 @@ class AdminSettings extends BaseController
         $db = \Config\Database::connect();
         $adminId = session()->get('admin_id');
         $data['adminUser'] = $db->table('users')->where('id', $adminId)->get()->getRowArray();
+        $data['admin_role'] = $role;
         
-        // Fetch Webhook Logs
+        // Fetch Webhook Logs (Only for Admin)
         $data['webhookLogs'] = [];
-        try {
-             $data['webhookLogs'] = $db->table('webhook_logs')
-                ->orderBy('created_at', 'DESC')
-                ->limit(50)
-                ->get()
-                ->getResultArray();
-        } catch (\Exception $e) {
-             // Ignore if table doesn't exist yet
+        if ($role === 'admin') {
+            try {
+                 $data['webhookLogs'] = $db->table('webhook_logs')
+                    ->orderBy('created_at', 'DESC')
+                    ->limit(50)
+                    ->get()
+                    ->getResultArray();
+            } catch (\Exception $e) {}
         }
         
         return view('admin/settings', $data);
@@ -79,6 +79,9 @@ class AdminSettings extends BaseController
     /** Save settings */
     public function save()
     {
+        if (session()->get('admin_role') !== 'admin') {
+            return $this->response->setStatusCode(403);
+        }
         $allowed = [
             'WHATSAPP_API_URL','WHATSAPP_TOKEN','WHATSAPP_VERIFY_TOKEN',
             'GENIEACS_URL','GENIEACS_USERNAME','GENIEACS_PASSWORD','GENIEACS_TOKEN',
@@ -107,6 +110,7 @@ class AdminSettings extends BaseController
         $username = trim($this->request->getPost('username'));
         $name = trim($this->request->getPost('name'));
         $email = trim($this->request->getPost('email'));
+        $phone = trim($this->request->getPost('phone'));
         
         // Validate inputs
         if (empty($username) || empty($name)) {
@@ -130,6 +134,7 @@ class AdminSettings extends BaseController
             'username' => $username,
             'name' => $name,
             'email' => $email,
+            'phone' => $phone,
             'updated_at' => date('Y-m-d H:i:s')
         ]);
         
