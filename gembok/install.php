@@ -148,6 +148,7 @@ execQuery($pdo, "CREATE TABLE IF NOT EXISTS `users` (
     `password` VARCHAR(255) NOT NULL,
     `name` VARCHAR(100) NOT NULL,
     `email` VARCHAR(150) NULL,
+    `phone` VARCHAR(20) NULL,
     `role` ENUM('admin','agent','customer','technician') DEFAULT 'customer',
     `whatsapp_lid` VARCHAR(50) NULL,
     `is_active` BOOLEAN DEFAULT TRUE,
@@ -287,6 +288,7 @@ addColumn($pdo, 'customers', 'isolation_date', 'INT DEFAULT 20', $isCli);
 addColumn($pdo, 'customers', 'lat', 'DECIMAL(10,8) NULL', $isCli);
 addColumn($pdo, 'customers', 'lng', 'DECIMAL(10,8) NULL', $isCli);
 addColumn($pdo, 'customers', 'portal_password', 'VARCHAR(255) NULL', $isCli); // New Password Column
+addColumn($pdo, 'users', 'phone', 'VARCHAR(20) NULL', $isCli); // New Phone Column for Users/Technicians
 
 // Update role enum for users
 execQuery($pdo, "ALTER TABLE `users` MODIFY COLUMN `role` ENUM('admin','agent','customer','technician') DEFAULT 'customer'", "Updated `users` role enum to include `technician`", $isCli);
@@ -294,6 +296,7 @@ execQuery($pdo, "ALTER TABLE `users` MODIFY COLUMN `role` ENUM('admin','agent','
 // Update trouble_tickets assigned_to column type
 execQuery($pdo, "ALTER TABLE `trouble_tickets` MODIFY COLUMN `assigned_to` INT UNSIGNED NULL", "Updated `trouble_tickets.assigned_to` to INT UNSIGNED", $isCli);
 
+addColumn($pdo, 'trouble_tickets', 'attachment', 'VARCHAR(255) NULL', $isCli); // Photo proof
 addColumn($pdo, 'invoices', 'updated_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP', $isCli);
 
 // Fix: Rename old column name to new standard
