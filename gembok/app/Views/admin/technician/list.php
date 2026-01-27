@@ -33,6 +33,10 @@
                 <input type="text" name="username" class="form-control" required placeholder="Username untuk login">
             </div>
             <div class="form-group">
+                <label class="form-label">No. WhatsApp</label>
+                <input type="text" name="phone" class="form-control" required placeholder="Contoh: 08123456789">
+            </div>
+            <div class="form-group">
                 <label class="form-label">Password</label>
                 <input type="password" name="password" class="form-control" required placeholder="Password">
             </div>
@@ -55,6 +59,7 @@
                     <th>ID</th>
                     <th>Nama</th>
                     <th>Username</th>
+                    <th>WhatsApp</th>
                     <th>Status</th>
                     <th>Dibuat Pada</th>
                     <th>Aksi</th>
@@ -66,6 +71,7 @@
                     <td>#<?= $t['id'] ?></td>
                     <td><strong><?= esc($t['name']) ?></strong></td>
                     <td><code><?= esc($t['username'] ?? '-') ?></code></td>
+                    <td><?= esc($t['phone'] ?? '-') ?></td>
                     <td>
                         <?php if ($t['is_active']): ?>
                             <span class="badge badge-success">Aktif</span>

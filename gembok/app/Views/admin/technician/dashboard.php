@@ -97,7 +97,12 @@
             <input type="hidden" id="modal_ticket_id">
             <div class="form-group">
                 <label class="form-label">Catatan Penyelesaian / Progress</label>
-                <textarea id="modal_notes" class="form-control" rows="5" placeholder="Tulis apa yang sudah dikerjakan..."></textarea>
+                <textarea id="modal_notes" class="form-control" rows="3" placeholder="Tulis apa yang sudah dikerjakan..."></textarea>
+            </div>
+            <div class="form-group" style="margin-top: 1rem;">
+                <label class="form-label">Foto Bukti (Opsional)</label>
+                <input type="file" id="modal_attachment" class="form-control" accept="image/*">
+                <small class="text-muted">Gunakan untuk foto redaman atau bukti instalasi.</small>
             </div>
         </div>
         <div class="modal-footer">
@@ -109,10 +114,10 @@
 
 <style>
     .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:9999; }
-    .modal { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; width: 90%; max-width: 500px; }
-    .modal-header { padding: 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; }
-    .modal-body { padding: 1rem; }
-    .modal-footer { padding: 1rem; border-top: 1px solid var(--border-color); display:flex; justify-content: flex-end; gap: 0.5rem; }
+    .modal { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; width: 90%; max-width: 500px; padding: 0; overflow: hidden; }
+    .modal-header { padding: 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+    .modal-body { padding: 1.5rem; }
+    .modal-footer { padding: 1rem; border-top: 1px solid var(--border-color); display:flex; justify-content: flex-end; gap: 0.5rem; background: rgba(0,0,0,0.1); }
     .modal-close { background:none; border:none; font-size: 1.5rem; color: var(--text-muted); cursor:pointer; }
 </style>
 
@@ -123,30 +128,42 @@
             document.getElementById('updateModal').setAttribute('data-status', status);
             document.getElementById('updateModal').style.display = 'flex';
         } else {
-            // direct update
-            await callUpdateStatus(id, status, '');
+            // direct update (no notes/photo)
+            await callUpdateStatus(id, status, '', null);
         }
     }
 
     function closeModal() {
         document.getElementById('updateModal').style.display = 'none';
+        document.getElementById('modal_notes').value = '';
+        document.getElementById('modal_attachment').value = '';
     }
 
     async function saveUpdate() {
         const id = document.getElementById('modal_ticket_id').value;
         const status = document.getElementById('updateModal').getAttribute('data-status');
         const notes = document.getElementById('modal_notes').value;
+        const fileInput = document.getElementById('modal_attachment');
+        const file = fileInput.files[0];
         
-        await callUpdateStatus(id, status, notes);
+        await callUpdateStatus(id, status, notes, file);
         closeModal();
     }
 
-    async function callUpdateStatus(id, status, notes) {
+    async function callUpdateStatus(id, status, notes, file) {
         try {
+            const formData = new FormData();
+            formData.append('id', id);
+            formData.append('status', status);
+            formData.append('notes', notes);
+            if (file) {
+                formData.append('attachment', file);
+            }
+
             const response = await fetch('<?= base_url('admin/technician/updateStatus') ?>', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
-                body: `id=${id}&status=${status}&notes=${encodeURIComponent(notes)}`
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: formData
             });
             const res = await response.json();
             if (res.success) {

@@ -626,6 +626,11 @@
                 <label class="form-label">Deskripsi Masalah</label>
                 <textarea id="trouble-desc" class="form-control" rows="3" placeholder="Contoh: Lampu LOS merah, Internet Lambat, dll..."></textarea>
             </div>
+            <div class="form-group">
+                <label class="form-label">Foto Lampiran (Opsional)</label>
+                <input type="file" id="trouble-attachment" class="form-control" accept="image/*" style="padding: 0.5rem;">
+                <small class="text-muted" style="display: block; margin-top: 0.25rem;">Foto modem atau bukti kendala.</small>
+            </div>
             <button type="button" class="btn" onclick="submitTrouble()" id="trouble-btn" style="background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);">
                 <i class="fas fa-paper-plane"></i>
                 Kirim Laporan
@@ -797,6 +802,7 @@
         }
         async function submitTrouble() {
             const descInput = document.getElementById('trouble-desc');
+            const fileInput = document.getElementById('trouble-attachment');
             const troubleBtn = document.getElementById('trouble-btn');
             const desc = descInput.value.trim();
             
@@ -809,13 +815,18 @@
             troubleBtn.innerHTML = '<i class="fas fa-spinner spinner"></i> Mengirim...';
             
             try {
+                const formData = new FormData();
+                formData.append('description', desc);
+                if (fileInput.files.length > 0) {
+                    formData.append('attachment', fileInput.files[0]);
+                }
+
                 const response = await fetch('<?= base_url('portal/reportTrouble') ?>', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
                         'X-Requested-With': 'XMLHttpRequest'
                     },
-                    body: 'description=' + encodeURIComponent(desc)
+                    body: formData
                 });
                 
                 const result = await response.json();
@@ -823,6 +834,7 @@
                 if (result.success) {
                     showAlert('success', result.message);
                     descInput.value = '';
+                    fileInput.value = '';
                 } else {
                     showAlert('error', result.message);
                 }
