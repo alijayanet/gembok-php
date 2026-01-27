@@ -6,7 +6,7 @@
 <?= $this->extend('layout') ?>
 
 <?= $this->section('title') ?>GenieACS - Gembok Admin<?= $this->endSection() ?>
-<?= $this->section('page_title') ?>GenieACS Device Management<?= $this->endSection() ?>
+<?= $this->section('page_title') ?>GenieACS<?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
 <?php

@@ -908,7 +908,7 @@
             </a>
             <?php endif; ?>
             
-            <div class="menu-section">Device Management</div>
+            <div class="menu-section">Devices</div>
             
             <?php 
             $genieUrl = ($role === 'technician') ? 'admin/technician/genieacs' : 'admin/genieacs';
@@ -1158,8 +1158,14 @@
         <?php endif; ?>
         <a href="<?= base_url('admin/map') ?>" class="nav-item <?= strpos(uri_string(), 'map') !== false ? 'active' : '' ?>">
             <i class="fas fa-map-marked-alt"></i>
-            <span>Map</span>
+            <span>Peta</span>
         </a>
+        <?php if (session()->get('admin_role') === 'technician'): ?>
+        <a href="<?= base_url('admin/technician/genieacs') ?>" class="nav-item <?= strpos(uri_string(), 'genieacs') !== false ? 'active' : '' ?>">
+            <i class="fas fa-satellite-dish"></i>
+            <span>Sinyal</span>
+        </a>
+        <?php endif; ?>
         <div class="nav-item" onclick="toggleSidebarMobile()">
             <i class="fas fa-bars"></i>
             <span>Menu</span>
