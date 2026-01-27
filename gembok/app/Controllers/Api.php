@@ -304,13 +304,17 @@ class Api extends BaseController
                 ->countAllResults();
             
             $stats = [
-                'todayRevenue' => (int)$todayRevenue,
                 'onlinePppoe' => (int)$onlinePppoe,
-                'pendingInvoices' => (int)$pendingInvoices,
                 'totalDevices' => (int)$totalDevices,
                 'pendingTickets' => (int)$pendingTickets,
                 'timestamp' => time()
             ];
+
+            // Only Admin can see financial stats
+            if (session()->get('admin_role') === 'admin') {
+                $stats['todayRevenue'] = (int)$todayRevenue;
+                $stats['pendingInvoices'] = (int)$pendingInvoices;
+            }
             
             return $this->response->setJSON(['success' => true, 'stats' => $stats]);
             

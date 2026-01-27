@@ -36,21 +36,8 @@ $routes->get('/', 'Home::index');
  * API Routes
  * --------------------------------------------------------------------
  */
-$routes->get('api/onuLocations', 'Api::onuLocations');
-$routes->get('api/onu/detail', 'Api::onuDetail');
-$routes->post('api/onu/add', 'Api::addOnu');
-$routes->post('api/onu/wifi', 'Api::updateWifi');
+// Webhook is public (verified by token/key inside controller)
 $routes->post('api/whatsapp/webhook', 'Api::whatsappWebhook');
-
-// Realtime Data API
-$routes->get('api/dashboard/stats', 'Api::dashboardStats');
-$routes->get('api/analytics/summary', 'Api::analyticsSummary');
-$routes->get('api/invoices/recent', 'Api::recentInvoices');
-
-// Pagination API
-$routes->get('api/customers/list', 'Api::customersList');
-$routes->get('api/invoices/list', 'Api::invoicesList');
-$routes->get('api/mikrotik/users', 'Api::mikrotikUsers');
 
 /*
  * --------------------------------------------------------------------
@@ -136,6 +123,20 @@ $routes->group('admin', ['filter' => 'admin'], function($routes) {
     // System Update
     $routes->get('update', 'Admin::update');
     $routes->post('update/run', 'Admin::runUpdate');
+
+    // API Routes (Protected)
+    $routes->group('api', function($routes) {
+        $routes->get('onuLocations', 'Api::onuLocations');
+        $routes->get('onu/detail', 'Api::onuDetail');
+        $routes->post('onu/add', 'Api::addOnu');
+        $routes->post('onu/wifi', 'Api::updateWifi');
+        $routes->get('dashboard/stats', 'Api::dashboardStats');
+        $routes->get('analytics/summary', 'Api::analyticsSummary');
+        $routes->get('invoices/recent', 'Api::recentInvoices');
+        $routes->get('customers/list', 'Api::customersList');
+        $routes->get('invoices/list', 'Api::invoicesList');
+        $routes->get('mikrotik/users', 'Api::mikrotikUsers');
+    });
 });
 
 /*

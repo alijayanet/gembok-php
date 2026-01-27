@@ -35,10 +35,36 @@ class AdminFilter implements FilterInterface
             return redirect()->to(site_url('admin/login'))->with('error', 'Silakan login terlebih dahulu.');
         }
         
-        // Check if user has admin role (optional - for more granular control)
+        // Check if user has admin role
         $userRole = $session->get('admin_role');
+        
+        // Block non-admin/technician roles from all admin routes
         if ($userRole !== null && !in_array($userRole, ['admin', 'superadmin', 'technician'])) {
             return redirect()->to(site_url('/'))->with('error', 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
+        // Specific restrictions for Technicians
+        if ($userRole === 'technician') {
+            $restrictedPatterns = [
+                '#^admin/analytics#i',
+                '#^admin/mikrotik#i',
+                '#^admin/hotspot#i',
+                '#^admin/billing#i',
+                '#^admin/technicians#i', // management list
+                '#^admin/update#i',
+                '#^admin/diagnostic#i',
+                '#^admin/genieacs#i', // only allow /admin/technician/genieacs
+                '#^admin/command#i', // terminal commands
+                '#^admin/api/analytics#i',
+                '#^admin/api/invoices#i',
+                '#^admin/api/customers#i',
+            ];
+
+            foreach ($restrictedPatterns as $pattern) {
+                if (preg_match($pattern, $path)) {
+                    return redirect()->to(site_url('admin/dashboard'))->with('error', 'Akses dibatasi. Halaman ini hanya untuk Administrator.');
+                }
+            }
         }
         
         // Continue with request
