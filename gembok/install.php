@@ -270,7 +270,9 @@ execQuery($pdo, "CREATE TABLE IF NOT EXISTS `trouble_tickets` (
     `status` ENUM('pending','in_progress','resolved','closed') DEFAULT 'pending',
     `priority` ENUM('low','medium','high') DEFAULT 'low',
     `assigned_to` INT UNSIGNED NULL,
+    `notes` TEXT NULL,
     `resolution_notes` TEXT NULL,
+    `resolved_at` TIMESTAMP NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;", "Table `trouble_tickets`", $isCli);
@@ -297,6 +299,8 @@ execQuery($pdo, "ALTER TABLE `users` MODIFY COLUMN `role` ENUM('admin','agent','
 execQuery($pdo, "ALTER TABLE `trouble_tickets` MODIFY COLUMN `assigned_to` INT UNSIGNED NULL", "Updated `trouble_tickets.assigned_to` to INT UNSIGNED", $isCli);
 
 addColumn($pdo, 'trouble_tickets', 'attachment', 'VARCHAR(255) NULL', $isCli); // Photo proof
+addColumn($pdo, 'trouble_tickets', 'notes', 'TEXT NULL', $isCli); 
+addColumn($pdo, 'trouble_tickets', 'resolved_at', 'TIMESTAMP NULL', $isCli);
 addColumn($pdo, 'invoices', 'updated_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP', $isCli);
 
 // Fix: Rename old column name to new standard
