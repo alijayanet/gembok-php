@@ -341,8 +341,7 @@ class Admin extends BaseController
         $validation = \Config\Services::validation();
         $validation->setRules([
             'customer_id' => 'required|numeric',
-            'title' => 'required|min_length[5]|max_length[200]',
-            'description' => 'required|min_length[10]',
+            'description' => 'required|min_length[5]',
             'priority' => 'required|in_list[low,medium,high,urgent]'
         ]);
 
@@ -351,9 +350,14 @@ class Admin extends BaseController
             return redirect()->back()->withInput();
         }
 
+        // Get customer details
+        $customerId = $this->request->getPost('customer_id');
+        $customer = $db->table('customers')->where('id', $customerId)->get()->getRowArray();
+
         $data = [
-            'customer_id' => $this->request->getPost('customer_id'),
-            'title' => $this->request->getPost('title'),
+            'customer_id' => $customerId,
+            'customer_name' => $customer['name'] ?? 'Unknown',
+            'customer_phone' => $customer['phone'] ?? '',
             'description' => $this->request->getPost('description'),
             'priority' => $this->request->getPost('priority'),
             'status' => 'pending',
@@ -361,6 +365,33 @@ class Admin extends BaseController
         ];
 
         $db->table('trouble_tickets')->insert($data);
+        $newTicketId = $db->insertID();
+
+        // Broadcast to All Technicians (Notify them about new report)
+        try {
+            $technicians = $db->table('users')->where('role', 'technician')->get()->getResultArray();
+            if (!empty($technicians)) {
+                $ws = new \App\Services\WhatsappService();
+                foreach ($technicians as $tech) {
+                    if (!empty($tech['phone'])) {
+                        $msg = "*LAPORAN GANGGUAN BARU (BY ADMIN)*\n\n";
+                        $msg .= "Halo {$tech['name']},\n";
+                        $msg .= "Admin telah membuat laporan gangguan baru:\n\n";
+                        $msg .= "--------------------------------\n";
+                        $msg .= "ID Tiket : #{$newTicketId}\n";
+                        $msg .= "Pelanggan : " . ($customer['name'] ?? 'N/A') . "\n";
+                        $msg .= "Keluhan : " . $this->request->getPost('description') . "\n";
+                        $msg .= "Prioritas : " . strtoupper($this->request->getPost('priority')) . "\n";
+                        $msg .= "--------------------------------\n\n";
+                        $msg .= "Mohon segera diproses.";
+                        
+                        $ws->sendMessage($tech['phone'], $msg);
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            log_message('error', 'Failed to broadcast admin ticket: ' . $e->getMessage());
+        }
         
         session()->setFlashdata('msg', '✅ Tiket berhasil dibuat');
         return redirect()->to('/admin/trouble');
