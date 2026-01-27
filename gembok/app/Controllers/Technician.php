@@ -206,4 +206,43 @@ class Technician extends BaseController
         $this->db->table('users')->insert($data);
         return redirect()->to('/admin/technicians')->with('msg', 'Teknisi berhasil ditambahkan');
     }
+
+    /**
+     * Update technician data
+     */
+    public function update($id)
+    {
+        if (session()->get('admin_role') !== 'admin') {
+            return $this->response->setStatusCode(403);
+        }
+
+        $data = [
+            'username' => $this->request->getPost('username'),
+            'name' => $this->request->getPost('name'),
+            'phone' => $this->request->getPost('phone'),
+            'is_active' => $this->request->getPost('is_active') ? 1 : 0,
+        ];
+
+        // Only update password if provided
+        $password = $this->request->getPost('password');
+        if (!empty($password)) {
+            $data['password'] = password_hash($password, PASSWORD_DEFAULT);
+        }
+
+        $this->db->table('users')->where('id', $id)->where('role', 'technician')->update($data);
+        return redirect()->to('/admin/technicians')->with('msg', 'Data teknisi berhasil diperbarui');
+    }
+
+    /**
+     * Delete technician
+     */
+    public function delete($id)
+    {
+        if (session()->get('admin_role') !== 'admin') {
+            return $this->response->setStatusCode(403);
+        }
+
+        $this->db->table('users')->where('id', $id)->where('role', 'technician')->delete();
+        return redirect()->to('/admin/technicians')->with('msg', 'Teknisi berhasil dihapus');
+    }
 }

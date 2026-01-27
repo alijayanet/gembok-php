@@ -87,6 +87,8 @@ $routes->group('admin', ['filter' => 'admin'], function($routes) {
     // Technician Management
     $routes->get('technicians', 'Technician::list');
     $routes->post('technicians/add', 'Technician::add');
+    $routes->post('technicians/update/(:num)', 'Technician::update/$1');
+    $routes->get('technicians/delete/(:num)', 'Technician::delete/$1');
     $routes->get('technician/dashboard', 'Technician::index');
     $routes->get('technician/genieacs', 'Technician::genieacs');
     $routes->get('technician/map', 'Technician::map');
