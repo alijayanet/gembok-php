@@ -401,8 +401,39 @@ class Admin extends BaseController
         ];
 
         $db->table('trouble_tickets')->where('id', $id)->update($data);
+
+        // Notify Technician via WhatsApp
+        try {
+            $ticket = $db->table('trouble_tickets')
+                ->select('trouble_tickets.*, customers.name as customer_name, customers.address as customer_address')
+                ->join('customers', 'customers.id = trouble_tickets.customer_id', 'left')
+                ->where('trouble_tickets.id', $id)
+                ->get()->getRowArray();
+                
+            $technician = $db->table('users')->where('id', $data['assigned_to'])->get()->getRowArray();
+            
+            if ($technician && !empty($technician['phone'])) {
+                $ws = new \App\Services\WhatsappService();
+                $msg = "*TUGAS BARU (TIKET GANGGUAN)*\n\n";
+                $msg .= "Halo {$technician['name']},\n";
+                $msg .= "Anda mendapat tugas baru untuk menangani tiket berikut:\n\n";
+                $msg .= "--------------------------------\n";
+                $msg .= "ID Tiket : #{$id}\n";
+                $msg .= "Pelanggan : {$ticket['customer_name']}\n";
+                $msg .= "Alamat : {$ticket['customer_address']}\n";
+                $msg .= "Keluhan : {$ticket['description']}\n";
+                $msg .= "Prioritas : " . strtoupper($ticket['priority']) . "\n";
+                $msg .= "--------------------------------\n\n";
+                $msg .= "Silakan cek dashboard teknisi untuk detail lebih lanjut.\n";
+                $msg .= "Terima kasih.";
+                
+                $ws->sendMessage($technician['phone'], $msg);
+            }
+        } catch (\Exception $e) {
+            log_message('error', 'Failed to notify technician: ' . $e->getMessage());
+        }
         
-        session()->setFlashdata('msg', '✅ Tiket berhasil di-assign');
+        session()->setFlashdata('msg', '✅ Tiket berhasil di-assign & Notifikasi terkirim');
         return redirect()->to('/admin/trouble');
     }
 

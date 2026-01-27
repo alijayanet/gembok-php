@@ -115,6 +115,14 @@ class Technician extends BaseController
             'updated_at' => date('Y-m-d H:i:s')
         ];
         
+        // Handle File Upload
+        $file = $this->request->getFile('attachment');
+        if ($file && $file->isValid() && !$file->hasMoved()) {
+            $newName = $file->getRandomName();
+            $file->move(FCPATH . 'uploads/tickets', $newName);
+            $data['attachment'] = $newName;
+        }
+        
         if ($status === 'resolved') {
             $data['resolved_at'] = date('Y-m-d H:i:s');
             $data['resolution_notes'] = $notes;
@@ -123,6 +131,39 @@ class Technician extends BaseController
         }
 
         $this->db->table('trouble_tickets')->where('id', $id)->update($data);
+
+        // Notify Customer & Admin if Resolved
+        if ($status === 'resolved') {
+            try {
+                $ticket = $this->db->table('trouble_tickets')
+                    ->select('trouble_tickets.*, customers.name as customer_name, customers.phone as customer_phone')
+                    ->join('customers', 'customers.id = trouble_tickets.customer_id', 'left')
+                    ->where('trouble_tickets.id', $id)
+                    ->get()->getRowArray();
+                
+                $ws = new \App\Services\WhatsappService();
+                $photoLink = isset($data['attachment']) ? base_url('uploads/tickets/' . $data['attachment']) : '';
+                
+                // Notify Customer
+                if (!empty($ticket['customer_phone'])) {
+                    $msg = "*LAPORAN SELESAI*\n\n";
+                    $msg .= "Yth. {$ticket['customer_name']},\n";
+                    $msg .= "Laporan gangguan Anda dengan ID #{$id} telah ditandai sebagai *SELESAI* oleh teknisi kami.\n\n";
+                    $msg .= "--------------------------------\n";
+                    $msg .= "Keterangan: {$notes}\n";
+                    if ($photoLink) {
+                        $msg .= "Bukti Foto: {$photoLink}\n";
+                    }
+                    $msg .= "--------------------------------\n\n";
+                    $msg .= "Mohon hubungi kami kembali jika masih ada kendala. Terima kasih.";
+                    
+                    $ws->sendMessage($ticket['customer_phone'], $msg);
+                }
+
+            } catch (\Exception $e) {
+                log_message('error', 'Failed to send resolution notify: ' . $e->getMessage());
+            }
+        }
         
         return $this->response->setJSON(['success' => true, 'message' => 'Status berhasil diupdate']);
     }
@@ -156,6 +197,7 @@ class Technician extends BaseController
             'username' => $this->request->getPost('username'),
             'password' => password_hash($this->request->getPost('password'), PASSWORD_DEFAULT),
             'name' => $this->request->getPost('name'),
+            'phone' => $this->request->getPost('phone'),
             'role' => 'technician',
             'is_active' => 1,
             'created_at' => date('Y-m-d H:i:s')

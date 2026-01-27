@@ -402,7 +402,46 @@ class Portal extends BaseController
             'updated_at' => date('Y-m-d H:i:s')
         ];
 
+        // Handle File Upload from Customer
+        $file = $this->request->getFile('attachment');
+        if ($file && $file->isValid() && !$file->hasMoved()) {
+            $newName = $file->getRandomName();
+            $file->move(FCPATH . 'uploads/tickets', $newName);
+            $data['attachment'] = $newName;
+        }
+
         $db->table('trouble_tickets')->insert($data);
+        $newTicketId = $db->insertID();
+
+        // Broadcast to All Technicians (Notify them about new report)
+        try {
+            $technicians = $db->table('users')->where('role', 'technician')->get()->getResultArray();
+            if (!empty($technicians)) {
+                $ws = new \App\Services\WhatsappService();
+                $photoLink = isset($data['attachment']) ? base_url('uploads/tickets/' . $data['attachment']) : '';
+                
+                foreach ($technicians as $tech) {
+                    if (!empty($tech['phone'])) {
+                        $msg = "*LAPORAN GANGGUAN BARU*\n\n";
+                        $msg .= "Halo {$tech['name']},\n";
+                        $msg .= "Ada laporan gangguan baru dari pelanggan:\n\n";
+                        $msg .= "--------------------------------\n";
+                        $msg .= "ID Tiket : #{$newTicketId}\n";
+                        $msg .= "Pelanggan : {$customer['name']}\n";
+                        $msg .= "Keluhan : {$description}\n";
+                        if ($photoLink) {
+                            $msg .= "Foto Lampiran: {$photoLink}\n";
+                        }
+                        $msg .= "--------------------------------\n\n";
+                        $msg .= "Mohon koordinasi dengan admin untuk pembagian tugas.\n";
+                        
+                        $ws->sendMessage($tech['phone'], $msg);
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            log_message('error', 'Failed to broadcast new ticket to technicians: ' . $e->getMessage());
+        }
 
         return $this->response->setJSON(['success' => true, 'message' => 'Laporan berhasil terkirim. Teknisi kami akan segera memproses.']);
     }
