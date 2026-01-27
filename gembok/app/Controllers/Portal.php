@@ -373,6 +373,41 @@ class Portal extends BaseController
     }
 
     /**
+     * Report Trouble - Customer submission
+     */
+    public function reportTrouble()
+    {
+        $session = session();
+        $customerId = $session->get('customer_id');
+        
+        if (!$customerId) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Silakan login kembali.']);
+        }
+
+        $description = $this->request->getPost('description');
+        if (empty($description)) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Deskripsi tidak boleh kosong']);
+        }
+
+        $db = \Config\Database::connect();
+        $customer = $db->table('customers')->where('id', $customerId)->get()->getRowArray();
+
+        $data = [
+            'customer_id' => $customerId,
+            'customer_name' => $customer['name'],
+            'description' => $description,
+            'status' => 'pending',
+            'priority' => 'low',
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+
+        $db->table('trouble_tickets')->insert($data);
+
+        return $this->response->setJSON(['success' => true, 'message' => 'Laporan berhasil terkirim. Teknisi kami akan segera memproses.']);
+    }
+
+    /**
      * Syarat & Ketentuan Page
      */
     public function tos()

@@ -83,8 +83,18 @@ $routes->group('admin', ['filter' => 'admin'], function($routes) {
     $routes->post('trouble/update/(:num)', 'Admin::updateTicket/$1');
     $routes->post('trouble/assign/(:num)', 'Admin::assignTicket/$1');
     $routes->post('trouble/close/(:num)', 'Admin::closeTicket/$1');
+
+    // Technician Management
+    $routes->get('technicians', 'Technician::list');
+    $routes->post('technicians/add', 'Technician::add');
+    $routes->get('technician/dashboard', 'Technician::index');
+    $routes->get('technician/genieacs', 'Technician::genieacs');
+    $routes->get('technician/map', 'Technician::map');
+    $routes->get('technician/getOnuData', 'Technician::getOnuData');
+    $routes->post('technician/updateStatus', 'Technician::updateStatus');
     
     // Billing Routes
+
     $routes->group('billing', function($routes) {
         $routes->get('/', 'Billing::index');
         $routes->get('invoices', 'Billing::invoices');
@@ -120,9 +130,6 @@ $routes->group('admin', ['filter' => 'admin'], function($routes) {
     // Telegram webhook management
     $routes->post('settings/setTelegramWebhook', 'AdminSettings::setTelegramWebhook');
     $routes->post('settings/deleteTelegramWebhook', 'AdminSettings::deleteTelegramWebhook');
-    // Cron job management (manual trigger)
-    $routes->get('settings/run-isolation', 'AdminSettings::runIsolation');
-    $routes->get('settings/generate-invoices', 'AdminSettings::generateInvoices');
     
     // System Update
     $routes->get('update', 'Admin::update');
@@ -155,6 +162,7 @@ $routes->post('portal/wifi', 'Portal::editWifi');
 $routes->post('portal/updateSsid', 'Portal::updateSsid');
 $routes->post('portal/updatePassword', 'Portal::updatePassword');
 $routes->post('portal/changePortalPassword', 'Portal::changePortalPassword'); // New Route
+$routes->post('portal/reportTrouble', 'Portal::reportTrouble');
 
 /*
  * --------------------------------------------------------------------

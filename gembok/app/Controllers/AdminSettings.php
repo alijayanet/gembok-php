@@ -259,42 +259,4 @@ class AdminSettings extends BaseController
         
         return redirect()->to('/admin/settings');
     }
-    
-    /**
-     * Run Isolation Check Manually
-     * Trigger: /admin/settings/run-isolation
-     */
-    public function runIsolation()
-    {
-        try {
-            // Call Billing::checkIsolation() method
-            $billing = new \App\Controllers\Billing();
-            $billing->checkIsolation();
-            
-            session()->setFlashdata('msg', '✅ Proses isolir selesai. Cek log untuk detail.');
-        } catch (\Exception $e) {
-            session()->setFlashdata('error', '❌ Gagal menjalankan isolir: ' . $e->getMessage());
-        }
-        
-        return redirect()->to('/admin/settings');
-    }
-    
-    /**
-     * Generate Invoices Manually
-     * Trigger: /admin/settings/generate-invoices
-     */
-    public function generateInvoices()
-    {
-        try {
-            // Call Billing::generateInvoices() method
-            $billing = new \App\Controllers\Billing();
-            $result = $billing->generateInvoices();
-            
-            session()->setFlashdata('msg', '✅ Invoice berhasil digenerate. ' . ($result ?? ''));
-        } catch (\Exception $e) {
-            session()->setFlashdata('error', '❌ Gagal generate invoice: ' . $e->getMessage());
-        }
-        
-        return redirect()->to('/admin/settings');
-    }
 }

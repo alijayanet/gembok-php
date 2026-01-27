@@ -37,8 +37,8 @@ class AdminFilter implements FilterInterface
         
         // Check if user has admin role (optional - for more granular control)
         $userRole = $session->get('admin_role');
-        if ($userRole !== null && !in_array($userRole, ['admin', 'superadmin'])) {
-            return redirect()->to(site_url('/'))->with('error', 'Anda tidak memiliki akses ke halaman admin.');
+        if ($userRole !== null && !in_array($userRole, ['admin', 'superadmin', 'technician'])) {
+            return redirect()->to(site_url('/'))->with('error', 'Anda tidak memiliki akses ke halaman ini.');
         }
         
         // Continue with request
