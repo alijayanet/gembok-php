@@ -60,9 +60,11 @@
                 <option>In Progress</option>
                 <option>Resolved</option>
             </select>
+            <?php if (session()->get('admin_role') === 'admin'): ?>
             <button class="btn btn-primary btn-sm" onclick="addTicket()">
                 <i class="fas fa-plus"></i> Tambah Laporan
             </button>
+            <?php endif; ?>
         </div>
     </div>
     
@@ -126,9 +128,11 @@
                         <td>
                             <div style="display: flex; gap: 0.5rem;">
                                 <?php if ($status !== 'resolved'): ?>
+                                    <?php if (session()->get('admin_role') === 'admin'): ?>
                                     <button class="btn btn-sm btn-primary" onclick="showAssignModal(<?= $ticket['id'] ?>, '<?= esc($ticket['assigned_to'] ?? '') ?>')" title="Tugaskan Teknisi">
                                         <i class="fas fa-user-check"></i>
                                     </button>
+                                    <?php endif; ?>
                                     <button class="btn btn-sm btn-success" onclick="resolveTicket(<?= $ticket['id'] ?>)" title="Tandai Selesai">
                                         <i class="fas fa-check"></i>
                                     </button>

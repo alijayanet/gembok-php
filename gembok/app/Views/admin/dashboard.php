@@ -55,6 +55,7 @@
         </div>
     </div>
     
+    <?php if (session()->get('admin_role') === 'admin'): ?>
     <!-- 4. Pending Invoices -->
     <div class="stat-card">
         <div class="stat-icon orange">
@@ -65,7 +66,9 @@
             <p>Invoice Belum Bayar</p>
         </div>
     </div>
+    <?php endif; ?>
     
+    <?php if (session()->get('admin_role') === 'admin'): ?>
     <!-- 5. Today's Revenue -->
     <div class="stat-card">
         <div class="stat-icon green">
@@ -76,6 +79,7 @@
             <p>Pendapatan Hari Ini</p>
         </div>
     </div>
+    <?php endif; ?>
 
     <!-- 6. Pending Tickets -->
     <div class="stat-card">
@@ -100,6 +104,7 @@
                 <i class="fas fa-map-marked-alt"></i>
                 <span>Peta ONU</span>
             </a>
+            <?php if (session()->get('admin_role') === 'admin'): ?>
             <a href="<?= base_url('admin/billing/invoices') ?>" class="action-card">
                 <i class="fas fa-file-invoice-dollar"></i>
                 <span>Invoice</span>
@@ -112,14 +117,29 @@
                 <i class="fas fa-box"></i>
                 <span>Paket</span>
             </a>
+            <?php endif; ?>
+            <?php if (session()->get('admin_role') === 'admin'): ?>
             <a href="<?= base_url('admin/tickets') ?>" class="action-card">
                 <i class="fas fa-headset"></i>
-                <span>Tiket</span>
+                <span>Tiket (Admin)</span>
             </a>
+            <?php endif; ?>
+            <a href="<?= base_url('admin/trouble') ?>" class="action-card">
+                <i class="fas fa-tools"></i>
+                <span>Daftar Laporan</span>
+            </a>
+            <?php if (session()->get('admin_role') === 'technician'): ?>
+            <a href="<?= base_url('admin/technician/genieacs') ?>" class="action-card">
+                <i class="fas fa-satellite-dish"></i>
+                <span>Cek Signal</span>
+            </a>
+            <?php endif; ?>
+            <?php if (session()->get('admin_role') === 'admin'): ?>
             <a href="<?= base_url('admin/settings') ?>" class="action-card">
                 <i class="fas fa-cog"></i>
                 <span>Settings</span>
             </a>
+            <?php endif; ?>
         </div>
     </div>
     

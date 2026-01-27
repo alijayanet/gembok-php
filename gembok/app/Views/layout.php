@@ -1139,10 +1139,12 @@
             <i class="fas fa-home"></i>
             <span>Home</span>
         </a>
+        <?php if (session()->get('admin_role') === 'admin'): ?>
         <a href="<?= base_url('admin/billing/customers') ?>" class="nav-item <?= strpos(uri_string(), 'billing/customers') !== false ? 'active' : '' ?>">
             <i class="fas fa-users"></i>
             <span>Pelanggan</span>
         </a>
+        <?php endif; ?>
         <?php if (session()->get('admin_role') === 'technician'): ?>
         <a href="<?= base_url('admin/trouble') ?>" class="nav-item <?= strpos(uri_string(), 'admin/trouble') !== false ? 'active' : '' ?>">
             <i class="fas fa-tools"></i>
