@@ -89,6 +89,7 @@ $routes->group('admin', ['filter' => 'admin'], function($routes) {
         $routes->get('invoices', 'Billing::invoices');
         $routes->post('generate', 'Billing::generateInvoices'); 
         $routes->post('pay/(:num)', 'Billing::payInvoice/$1');
+        $routes->post('cancel/(:num)', 'Billing::cancelInvoice/$1'); // New Route
         $routes->post('unisolate_only/(:num)', 'Billing::unisolateOnly/$1'); // New Route
         $routes->get('print/(:num)', 'Billing::printInvoice/$1');
         $routes->get('cron/isolir', 'Billing::checkIsolation');

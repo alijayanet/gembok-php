@@ -520,6 +520,35 @@ class Billing extends BaseController
     }
 
     /**
+     * Cancel Invoice
+     * Instead of deleting, we mark it as 'cancelled'
+     */
+    public function cancelInvoice($id)
+    {
+        // Get invoice details
+        $invoice = $this->db->table('invoices')->where('id', $id)->get()->getRowArray();
+        
+        if (!$invoice) {
+            session()->setFlashdata('error', 'Invoice tidak ditemukan');
+            return redirect()->back();
+        }
+
+        if ($invoice['paid'] == 1) {
+            session()->setFlashdata('error', 'Invoice yang sudah LUNAS tidak dapat dibatalkan.');
+            return redirect()->back();
+        }
+        
+        // Update status to cancelled
+        $this->db->table('invoices')->where('id', $id)->update([
+            'status' => 'cancelled',
+            'updated_at' => date('Y-m-d H:i:s')
+        ]);
+        
+        session()->setFlashdata('msg', "Invoice <strong>{$invoice['invoice_number']}</strong> berhasil dibatalkan.");
+        return redirect()->to('/admin/billing/invoices');
+    }
+
+    /**
      * Unisolate Customer WITHOUT Marking Invoice as Paid
      * Use Case: Customer promises to pay later / request extension
      */
