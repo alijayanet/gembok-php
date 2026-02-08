@@ -355,6 +355,18 @@ class Billing extends BaseController
     }
 
     /**
+     * Get Customer Data (JSON) for Edit Modal
+     */
+    public function getCustomer($id)
+    {
+        $customer = $this->db->table('customers')->where('id', $id)->get()->getRowArray();
+        if (!$customer) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Customer not found']);
+        }
+        return $this->response->setJSON(['success' => true, 'data' => $customer]);
+    }
+
+    /**
      * Delete Customer
      */
     public function deleteCustomer($id)
