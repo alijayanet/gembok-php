@@ -143,6 +143,13 @@ $unpaidInvoices = $totalInvoices - $paidInvoices;
                                             <i class="fas fa-unlock"></i> Buka
                                         </button>
                                     </form>
+
+                                    <!-- Tombol Cancel -->
+                                    <form action="<?= base_url('admin/billing/cancel/' . $inv['id']) ?>" method="post" onsubmit="return confirm('Batalkan invoice ini? Status akan berubah menjadi Batal.');" style="display:inline;">
+                                        <button type="submit" class="btn btn-secondary btn-sm" title="Batalkan Invoice" style="background: var(--neon-red); border-color: var(--neon-red);">
+                                            <i class="fas fa-times"></i> Batal
+                                        </button>
+                                    </form>
                                 <?php endif; ?>
                                 
                                 <button class="btn btn-secondary btn-sm" title="Cetak" onclick="window.open('<?= base_url('admin/billing/print/' . $inv['id']) ?>', 'PrintInvoice', 'width=400,height=600')">
