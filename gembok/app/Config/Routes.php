@@ -101,6 +101,7 @@ $routes->group('admin', ['filter' => 'admin'], function($routes) {
         
         $routes->get('customers', 'Billing::customers');
         $routes->post('customers/add', 'Billing::addCustomer');
+        $routes->get('customers/get/(:num)', 'Billing::getCustomer/$1');
         $routes->post('customers/edit/(:num)', 'Billing::editCustomer/$1');
         $routes->get('customers/delete/(:num)', 'Billing::deleteCustomer/$1');
         $routes->get('customers/unisolate/(:num)', 'Billing::unisolateManual/$1');
