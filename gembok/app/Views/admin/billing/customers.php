@@ -314,12 +314,75 @@
                         <td>
                             <button class="btn btn-secondary btn-sm" onclick="editCustomer(<?= $c['id'] ?>)" title="Edit"><i class="fas fa-edit"></i></button>
                             <button class="btn btn-secondary btn-sm" onclick="createInvoice(<?= $c['id'] ?>)" title="Buat Invoice"><i class="fas fa-file-invoice"></i></button>
+                            <a href="<?= base_url('admin/billing/customers/delete/' . $c['id']) ?>" class="btn btn-secondary btn-sm" title="Hapus" onclick="return confirm('Hapus pelanggan ini?')" style="background: var(--neon-red); border-color: var(--neon-red);">
+                                <i class="fas fa-trash"></i>
+                            </a>
                         </td>
                     </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </tbody>
         </table>
+    </div>
+</div>
+
+<!-- Edit Customer Modal -->
+<div id="editModal" class="modal-overlay" style="display: none;">
+    <div class="modal" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3><i class="fas fa-user-edit"></i> Edit Pelanggan</h3>
+            <button class="modal-close" onclick="closeEditModal()">&times;</button>
+        </div>
+        <form id="editCustomerForm" method="POST" action="">
+            <div class="modal-body">
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label">Nama Pelanggan</label>
+                        <input type="text" name="name" id="edit_name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nomor HP</label>
+                        <input type="text" name="phone" id="edit_phone" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Username PPPoE</label>
+                        <input type="text" id="edit_pppoe" class="form-control" readonly style="background: rgba(255,255,255,0.05);">
+                        <small style="color: var(--text-muted)">Username tidak dapat diubah</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Paket Langganan</label>
+                        <select name="package_id" id="edit_package_id" class="form-control" required>
+                            <?php foreach ($packages ?? [] as $pkg): ?>
+                            <option value="<?= $pkg['id'] ?>"><?= esc($pkg['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tanggal Isolir</label>
+                        <input type="number" name="isolation_date" id="edit_isolation_date" class="form-control" min="1" max="28" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" id="edit_email" class="form-control">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label class="form-label">Alamat</label>
+                    <textarea name="address" id="edit_address" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label class="form-label">Koordinat (Lat, Lng)</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" name="lat" id="edit_lat" class="form-control" placeholder="Latitude">
+                        <input type="text" name="lng" id="edit_lng" class="form-control" placeholder="Longitude">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Batal</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Perbarui Data</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -368,6 +431,7 @@
         </form>
     </div>
 </div>
+
 
 <style>
     /* Modal Styles */
@@ -583,9 +647,43 @@
         });
     });
     
-    // Edit customer (placeholder)
+    // Edit customer
     function editCustomer(id) {
-        alert('Edit pelanggan #' + id + '\n\nFitur edit akan segera tersedia.');
+        fetch('<?= base_url('admin/billing/customers/get') ?>/' + id)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const customer = data.data;
+                    document.getElementById('edit_name').value = customer.name;
+                    document.getElementById('edit_phone').value = customer.phone;
+                    document.getElementById('edit_pppoe').value = customer.pppoe_username;
+                    document.getElementById('edit_package_id').value = customer.package_id;
+                    document.getElementById('edit_isolation_date').value = customer.isolation_date;
+                    document.getElementById('edit_email').value = customer.email;
+                    document.getElementById('edit_address').value = customer.address;
+                    document.getElementById('edit_lat').value = customer.lat;
+                    document.getElementById('edit_lng').value = customer.lng;
+                    
+                    document.getElementById('editCustomerForm').action = '<?= base_url('admin/billing/customers/edit') ?>/' + id;
+                    openEditModal();
+                } else {
+                    alert('Gagal mengambil data pelanggan: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan saat mengambil data.');
+            });
+    }
+
+    function openEditModal() {
+        document.getElementById('editModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeEditModal() {
+        document.getElementById('editModal').style.display = 'none';
+        document.body.style.overflow = '';
     }
     
     // Create invoice (placeholder)
@@ -617,6 +715,14 @@
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeImportModal();
+            closeEditModal();
+        }
+    });
+
+    // Close modal when clicking outside
+    document.getElementById('editModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeEditModal();
         }
     });
 </script>
