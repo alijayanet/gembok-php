@@ -64,9 +64,9 @@ try {
             // Get package to find isolir profile
             $package = $db->table('packages')->where('id', $cust['package_id'])->get()->getRowArray();
             
-            if ($package && !empty($package['isolir_profile']) && !empty($cust['pppoe_username'])) {
+            if ($package && !empty($package['profile_isolir']) && !empty($cust['pppoe_username'])) {
                 // Change MikroTik profile to isolir profile
-                $result = $mikrotik->setPppoeUserProfile($cust['pppoe_username'], $package['isolir_profile']);
+                $result = $mikrotik->setPppoeUserProfile($cust['pppoe_username'], $package['profile_isolir']);
                 
                 if ($result) {
                     // Update customer status to isolated
@@ -81,7 +81,7 @@ try {
                         'customer_id' => $cust['id'],
                         'name' => $cust['name'],
                         'pppoe' => $cust['pppoe_username'],
-                        'profile_changed_to' => $package['isolir_profile']
+                        'profile_changed_to' => $package['profile_isolir']
                     ]);
                 } else {
                     $log->warning('Failed to change MikroTik profile', [
@@ -126,9 +126,9 @@ try {
             // Get package to find normal profile
             $package = $db->table('packages')->where('id', $cust['package_id'])->get()->getRowArray();
             
-            if ($package && !empty($package['profile']) && !empty($cust['pppoe_username'])) {
+            if ($package && !empty($package['profile_normal']) && !empty($cust['pppoe_username'])) {
                 // Restore normal profile
-                $result = $mikrotik->setPppoeUserProfile($cust['pppoe_username'], $package['profile']);
+                $result = $mikrotik->setPppoeUserProfile($cust['pppoe_username'], $package['profile_normal']);
                 
                 if ($result) {
                     // Update customer status to active
@@ -143,7 +143,7 @@ try {
                         'customer_id' => $cust['id'],
                         'name' => $cust['name'],
                         'pppoe' => $cust['pppoe_username'],
-                        'profile_changed_to' => $package['profile']
+                        'profile_changed_to' => $package['profile_normal']
                     ]);
                 } else {
                     $log->warning('Failed to restore MikroTik profile', [
